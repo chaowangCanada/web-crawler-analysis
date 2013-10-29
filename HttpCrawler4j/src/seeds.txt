@@ -1,0 +1,6 @@
+# Enter each line a Seed (where the crawler should start from)
+
+http://www.abcdefg.org/starthere.html
+http://www.abcdefg.org/anotherurl.php
+
+#ignore this line

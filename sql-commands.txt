@@ -1,0 +1,20 @@
+
+== Often Used SQL Commands ==
+DROP TABLE IF EXISTS HostInfo_todoUrls, hibernate_sequence, Header, PageInfo, Certificate, HostInfo, CrawlingSession;
+SHOW TABLES;
+select * FROM HostInfo ORDER BY ID DESC LIMIT 10;
+SELECT COUNT(DISTINCT(HOST_ID)) from Certificate; 
+select DISTINCT(value) as v from Header where name="Server" ORDER by v ASC ;
+select COUNT(*) FROM HostInfo;
+select COUNT(*) FROM Header;
+select name, COUNT(name) as cnt from Header GROUP BY name ORDER BY cnt ASC;
+
+
+
+
+== Export Database ==
+mysqldump -u root -p crawler > dump.sql
+mysqldump -u root -p --no-create-info crawler > dump.sql
+
+== Import database == 
+mysql -u username -p crawler < dump.sql

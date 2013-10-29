@@ -1,0 +1,61 @@
+<html>
+<head>
+</head>
+<body>
+<h1>Analysis Results</h1>
+<p>Do not delete this file! You can delete the folder "export".
+<a href="export/header.html">&Uuml;bersicht &uuml;ber alle Headers.</a></p>
+<h2>Software Versionen</h2>
+<ul>
+  <li><a href="export/header_X-Powered-By.html">X-Powered-By (e.g. PHP-Version,...)</a></li>
+  <li><a href="export/header_X-AspNet-Version.html">X-AspNet-Version (ASP.Net Version)</a></li>
+  <li><a href="export/header_Server.html">Server (e.g. Apache Version, IIS-Version,...)</a></li>
+  <li><a href="export/header_META-Generator.html">META-Tag: Generator (e.g. Typo3 Version, Wordpress Version, Joomla Version,...)</a></li>
+</ul>
+<h2>XSS Headers &amp; others</h2>
+<ul>
+  <li><a href="export/header_Pragma.html">Pragma (no-cache, public)</a></li>
+  <li><a href="export/header_Access-Control-Allow-Origin.html">CORS (Access-Control-Allow-Origin)</a></li>
+  <li><a href="export/header_X-Frame-Options.html">X-Frame-Options</a></li>
+  <li><a href="export/header_X-XSS-Protection.html">X-XSS-Protection</a></li>
+  <li><a href="export/header_X-FRAME-OPTIONS.html">X-Frame-Options</a></li>
+  <li><a href="export/header_X-Content-Type-Options.html">X-Content-Type-Options</a></li>
+  <li><a href="export/header_Content-Security-Policy.html">Content-Security-Polcicy</a></li>
+  <li><a href="export/header_X-Content-Security-Policy.html">X-Content-Security-Polcicy</a></li>
+  <li><a href="export/header_X-WebKit-CSP.html">X-WebKit-CSP</a></li>
+  <li><a href="export/header_P3P.html">P3P</a></li>
+</ul>
+
+<h2>Detected Skripts</h2>
+  <p>These could leak information or inject code.</p>
+  <ul><li><a href="export/header_Skript.html">Detected Skripts (FB, G+, ...)</a></li></ul>
+  
+<h2>Cookies</h2>
+  <ul><li><a href="export/cookies.html">Cookies</a> (HTTPonly, Secure)</li></ul>
+  
+<h2>Certificates</h2>
+<p>Watch for Certificates containing "www.usertrust.com", they sign root certificates. Seems to be a service from Comodo.</p>
+<ul>
+  <li><a href="export/certvalid.html">Overview</a></li>
+  <li><a href="export/certvalid.html#cert_sizes">Certificate Sizes</a></li>
+  <li><a href="export/certvalid.html#invalid_hostname">Invalid Hostnames</a> (no match)</li>
+  <li><a href="export/certvalid.html#expired">Expired Certificates</a></li>
+  <li><a href="export/certvalid.html#not_yet_valid">Not yet valid Certificates</a></li>
+  <li><a href="export/certvalid.html#no_trust_anchor">No trust Anchor</a></li>
+  <li><a href="export/certvalid.html#exception">Others</a> (CertPathValidatorException, e.g. NAME_CHAINING or expired)</li>
+  <li><a href="export/certvalid.html#cert_grouped">Grouped Certificates (by Cert Attributes)</a></li>
+  <li><a href="export/certvalid.html#inverse_tree">Inverse Tree (index)</a></li>
+  <li><a href="export/cert_inverse.html">Inverse Tree (full detail)</a></li>
+  <li><a href="export/certvalid.html#same_moduli">Same Modulus</a></li>
+  <li><a href="export/certvalid.html#same_exponent">Same Exponent</a></li>
+</ul>
+
+<h2>SSL</h2>
+<ul>
+  <li><a href="export/ssl.html#ssl_protocol">SSL Protocols</a> (e.g. TLSv1, SSLv3)</li>
+  <li><a href="export/ssl.html#cipher_suite">Cipher suites</a> (e.g. SSL_RSA_WITH_RC4_128_SHA)</li>
+  <li><a href="export/ssl.html#needs_client_auth">Needs client auth.</a></li>
+  <li><a href="export/ssl.html#wants_client_auth">Wants client auth.</a></li>
+</ul>
+</body>
+</html>
