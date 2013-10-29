@@ -14,11 +14,11 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-	<scm>
+	<!--<scm>
 		<connection>scm:git:https://crawler4j.googlecode.com/git/</connection>
 		<developerConnection>scm:git:https://crawler4j.googlecode.com/git/</developerConnection>
 		<url>https://crawler4j.googlecode.com/git/</url>
-	</scm>
+	</scm>-->
 	<developers>
 		<developer>
 			<name>Yasser Ganjisaffar</name>

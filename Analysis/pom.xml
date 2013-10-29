@@ -4,14 +4,14 @@
 	<groupId>at.chille.crawler</groupId>
 	<artifactId>analysis</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<repositories>
+<!--	<repositories>
 		<repository>
 			<layout>legacy</layout>
 			<id>LocalRepository</id>
 			<name>LocalRepository</name>
 			<url>file:///home/chille/Daten/Studium/Dateien/seminar/web-crawler/HttpCrawler4jDatabase/database/</url>
 		</repository>
-	</repositories>
+	</repositories>-->
 
 
 	<dependencies>

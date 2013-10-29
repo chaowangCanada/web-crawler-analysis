@@ -4,14 +4,14 @@
   <artifactId>HttpCrawler4j</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>HttpCrawler4j</name>
-	<repositories>
+	<!--<repositories>
 		<repository>
 			<layout>legacy</layout>
 			<id>LocalRepository</id>
 			<name>LocalRepository</name>
 			<url>file:///home/chille/Daten/Studium/Dateien/seminar/web-crawler/HttpCrawler4jDatabase/database/</url>
 		</repository>
-	</repositories>
+	</repositories>-->
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>

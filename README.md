@@ -5,7 +5,6 @@ web-crawler-analysis
 - install maven
 - install mysql database (on localhost!)
 - you may need to install the Spring Framework
-- update pom.xml files in Analysis and HttpCrawler4j: Repository is absolute path:-(
 - setup configfile: ./Analysis/src/main/resources/database.properties
 - setup configfile: ./HttpCrawler4j/src/database.properties
 - config seeds: ./HttpCrawler4j/src/seeds.txt
@@ -62,11 +61,12 @@ For Licence details please see licence.txt in the root folder and in each subfol
 11. Crawler is multithreaded. Has still to be tested how many pages at once are feasible.
 12. different priorities for HTTPS/HTTP-pages are possible and respected. Also a different priority for the Whitelist.
   I used 10 for the whitelist and 5 for http/https. Hence the whitelisted-urls are visited last and the queue wont get too large.
+13. Hint: do not use brackets () in your (absolute) path or maven builds will fail.
 
 == Problems ==
 If you have problems with maven dependencies between projects do exactly what it says here in the console:
 http://www.avajava.com/tutorials/lessons/how-do-i-add-a-project-as-a-dependency-of-another-project.html?page=2
 e.g in ./HttpCrawler4jDatabase: mvn clean install
 e.g in ./crawler4j: mvn clean install
-e.g in ./HttpCrawler4j: mvn eclipse:eclipse
+e.g in ./HttpCrawler4j/database: mvn eclipse:eclipse
 e.g in ./Analysis: mvn eclipse:eclipse
