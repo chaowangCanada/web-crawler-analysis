@@ -1,0 +1,6 @@
+# URLS with these prefixes are always crawled (even if they were already visited once)
+
+http://www.abcdefg.com/somefolder/
+http://www.abcdefg.org/
+#ignore this line
+
