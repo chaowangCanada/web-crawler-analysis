@@ -14,5 +14,4 @@
     <jpa:repositories base-package="at.chille.crawler.database.repository" />
     <bean class="org.springframework.orm.hibernate4.HibernateExceptionTranslator"/>
 
-
 </beans>

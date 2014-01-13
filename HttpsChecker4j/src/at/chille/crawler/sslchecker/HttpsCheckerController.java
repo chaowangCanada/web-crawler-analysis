@@ -1,55 +1,28 @@
-package at.chille.crawler;
+package at.chille.crawler.sslchecker;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.Map;
-
-import org.apache.http.conn.scheme.SchemeSocketFactory;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import at.chille.crawler.database.model.HostInfo;
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
 import edu.uci.ics.crawler4j.fetcher.PageFetcher;
-import edu.uci.ics.crawler4j.robotstxt.RobotstxtConfig;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer;
 
 /**
  * @author chille
  * 
  */
-public class HttpAnalysisCrawlController extends CrawlController {
-	public HttpAnalysisCrawlController(CrawlConfig config,
-			PageFetcher pageFetcher, RobotstxtServer robotstxtServer)
-			throws Exception {
-		super(config, pageFetcher, robotstxtServer);
+public class HttpsCheckerController  {
+	public HttpsCheckerController() {
 	}
 
 	protected static boolean resumable = true;
 	protected static int threads = 1;
 
 	protected static Logger logger = Logger
-			.getLogger(HttpAnalysisCrawlController.class);
+			.getLogger(HttpsCheckerController.class);
 
-
-	@Override
-	protected void cronJob() {
-		super.cronJob();
-		// deprecated, (5000 hosts -> 35 seconds
-		// locking the database for this long time is extremely slow!
-		// store directly, if something is changed in HostInfo!
-		/*
-		 * try { if (new Date().getTime() > lastStoreDatabase + storeInterval) {
-		 * logger.info("Saving to database...");
-		 * DatabaseManager.getInstance().saveSession();
-		 * logger.info("Saved to database."); lastStoreDatabase = new
-		 * Date().getTime(); } } catch (Exception ex) { ex.printStackTrace(); }
-		 */
-	}
 
   public static void main(String[] args) throws Exception {
 		if (args.length != 2) {
@@ -57,7 +30,9 @@ public class HttpAnalysisCrawlController extends CrawlController {
 			System.out
 					.println("\t rootFolder (it will contain intermediate crawl data)");
 			System.out
-					.println("\t numberOfCralwers (number of concurrent threads)");
+					.println("\t numberOfWorkers (number of concurrent threads)");
+			System.out
+					.println("\t niceTimeWait (milliseconds to wait between each connection attempt to one host)");
 			return;
 		}
 		BufferedReader console = new BufferedReader(new InputStreamReader(
@@ -65,7 +40,7 @@ public class HttpAnalysisCrawlController extends CrawlController {
 
 		while (true) {
 			System.out
-					.println("Do you want to make crawling resumable/resume crawling? (y/yes/n/no)");
+					.println("Do you want to make SSL checking resumable/resume SSL? (y/yes/n/no)");
 			String command = console.readLine();
 			if (command.toLowerCase().equals("y")
 					|| command.toLowerCase().equals("yes")) {
@@ -79,42 +54,26 @@ public class HttpAnalysisCrawlController extends CrawlController {
 			}
 		}
 
-		logger.setLevel(Level.ALL);
-		System.out.println("Initializing Crawler Config...");
+		System.out.println("Initializing SSL Config...");
 		String crawlStorageFolder = args[0];
-		int numberOfCrawlers = Integer.parseInt(args[1]);
-		CrawlConfig config = new CrawlConfig();
-		threads = numberOfCrawlers;
-		config.setCrawlStorageFolder(crawlStorageFolder);
-		config.setPolitenessDelay(10); // do not use this for niceWaitTime
-		// see HttpAnalysisCrawler instead
-		config.setIncludeHttpsPages(true);
-		config.setFollowRedirects(true);
-		config.setConnectionTimeout(4000);
-		config.setSocketTimeout(10000);
-		config.setMaxConnectionsPerHost(10);
-		config.setMaxTotalConnections(1000);
-		config.setUserAgentString("Crawler for Research Purposes; still under development; based on crawler4j (http://code.google.com/p/crawler4j/)");
-		config.setMaxDepthOfCrawling(-1);
-		config.setResumableCrawling(resumable);
-		config.setMaxPagesToFetch(-1);
-		// set to -1, +1 is just for testing a single page
+		threads = Integer.parseInt(args[1]);
+		
 
 		// Try to initialize Database
 		logger.info("Initialize Database...");
 		try {
-			DatabaseManager.getInstance();
+			SSLDatabaseManager.getInstance();
 			if (resumable) {
-				logger.info("Loading last Crawling Session...");
-				DatabaseManager.getInstance().loadLastCrawlingSession();
+				logger.info("Loading last SSL Session...");
+				SSLDatabaseManager.getInstance().loadLastSslSession();
 			}
-			if (DatabaseManager.getInstance().getCurrentCrawlingSession() == null) {
-				logger.info("Generate New Crawling Session...");
-				DatabaseManager.getInstance().setNewCrawlingSession(
+			if (SSLDatabaseManager.getInstance().getCurrentSslSession() == null) {
+				logger.info("Generate New SSL Session...");
+				SSLDatabaseManager.getInstance().setNewSslSession(
 						"Crawling Testing");
 			}
 
-			DatabaseManager.getInstance().saveSession();
+			//DatabaseManager.getInstance().saveSession();
 			// DatabaseManager.getInstance().tryAddingSomething();
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -122,20 +81,10 @@ public class HttpAnalysisCrawlController extends CrawlController {
 		}
 
 		// Hint: Exit here to test database schema only
-		// System.exit(0);
+		System.exit(0);
 
-		logger.info("Setting up TrustStrategy and HostnameVerifier to catch the HTTPS Details...");
-		try {
-			TrustStrategy ts = new AllowAllTrustStrategy();
-			X509HostnameVerifier hv = new AllAllowHostNameVerifier();
-			SchemeSocketFactory httpsSocketFactory = new SSLSocketFactory(ts,
-					hv);
-			config.setHttpsSocketFactory(httpsSocketFactory);
-		} catch (Exception ex) {
-			System.err.println(ex.toString());
-		}
-
-		System.out.println("Crawling configuration:");
+		
+		/*System.out.println("Crawling configuration:");
 		System.out.println(config);
 
 		// Instantiate the controller for this crawl.
@@ -144,7 +93,7 @@ public class HttpAnalysisCrawlController extends CrawlController {
 		RobotstxtConfig robotstxtConfig = new RobotstxtConfig();
 		RobotstxtServer robotstxtServer = new RobotstxtServer(robotstxtConfig,
 				pageFetcher);
-		CrawlController controller = new HttpAnalysisCrawlController(config,
+		CrawlController controller = new HttpsCheckerController(config,
 				pageFetcher, robotstxtServer);
 
 		logger.info("Adding Seeds...");
@@ -154,7 +103,7 @@ public class HttpAnalysisCrawlController extends CrawlController {
 		}
 
 		// blocking operation:
-		logger.info("Starting " + numberOfCrawlers + " Crawler(s)...");
+		logger.info("Starting Crawler...");
 		// controller.start(HttpAnalysisCrawler.class, numberOfCrawlers);
 		controller
 				.startNonBlocking(HttpAnalysisCrawler.class, numberOfCrawlers);
@@ -203,6 +152,6 @@ public class HttpAnalysisCrawlController extends CrawlController {
 		 */
 
 		// System.out.println("\n\n");
-		// System.out.println(CertificateLogger.getInstance());
+		// System.out.println(CertificateLogger.getInstance());*/
 	}
 }
