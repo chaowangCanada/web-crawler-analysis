@@ -24,7 +24,6 @@ import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 public class HttpsChecker implements Runnable
 {
   protected HashSet<String>     WHITELIST              = new HashSet<String>();
-  protected int                 inspectionLimitPerHost = 1;
 
   protected long                niceWaitTime           = 500;
 

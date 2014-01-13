@@ -2,6 +2,7 @@ package at.chille.crawler.sslchecker;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -29,6 +30,7 @@ public class SSLDatabaseManager
   private static ClassPathXmlApplicationContext context = null;
   private static SSLDatabaseManager                _instance;
 
+  protected CrawlingSession		 	  currentCrawlingSession;
   protected SslSession                     currentSslSession;
   
   public static SSLDatabaseManager getInstance()
@@ -47,8 +49,8 @@ public class SSLDatabaseManager
   {
     // Reminder: Double store, because by saving the object changes.
     // if it is not restored, it is saved again, and all certificates
-    // occur twice in the database everytime the hostInfo is saved.
-	  currentSslSession.addHostSslInfo(hi);
+    // occur twice in the database every time the hostInfo is saved.
+	currentSslSession.addHostSslInfo(hi);
     hi = hostSslInfoRepository.save(hi);
     currentSslSession.addHostSslInfo(hi);
     return hi;
@@ -74,6 +76,19 @@ public class SSLDatabaseManager
       }
     }
   }
+  
+  public void loadLastCrawlingSession()
+  {
+    long timeStartedMax = 0;
+    for (CrawlingSession cs : crawlingSessionRepository.findAll())
+    {
+      if (cs.getTimeStarted().longValue() > timeStartedMax)
+      {
+        timeStartedMax = cs.getTimeStarted().longValue();
+        this.currentCrawlingSession = cs;
+      }
+    }
+  }
 
   public SslSession getCurrentSslSession()
   {
@@ -90,10 +105,10 @@ public class SSLDatabaseManager
     return lockedHosts.get(hostName);
   }
 
-  public HostSslInfo getHostInfo(String hostName)
+  public HostSslInfo getHostSslInfo(String hostName)
   {
     // not synchronized on purpose: not necessary
-	HostSslInfo toReturn = currentSslSession.getHosts().get(hostName);
+	HostSslInfo toReturn = currentSslSession.getSslHosts().get(hostName);
     return toReturn;
   }
 
@@ -103,6 +118,11 @@ public class SSLDatabaseManager
 	  currentSslSession.addHostSslInfo(hostInfo);
   }
 
+  public Map<String, HostInfo> getAllHosts()
+  {
+	  return currentCrawlingSession.getHosts();
+  }
+  
   protected static synchronized ApplicationContext getContext()
   {
     if (context == null)
@@ -121,6 +141,46 @@ public class SSLDatabaseManager
     return context;
   }
 
+  
+  @Autowired
+  HostInfoRepository        hostInfoRepository;
+  @Autowired
+  CertificateRepository     certificateRepository;
+  @Autowired
+  PageInfoRepository        pageInfoRepository;
+  @Autowired
+  CrawlingSessionRepository crawlingSessionRepository;
+  @Autowired
+  HeaderRepository          headerRepository;
+
+  @Inject
+  @Named("hostInfoRepository")
+  public void setHostInfoRepository(HostInfoRepository t)
+  {
+    this.hostInfoRepository = t;
+  }
+
+  @Inject
+  @Named("certificateRepository")
+  public void setCertificateRepository(CertificateRepository t)
+  {
+    this.certificateRepository = t;
+  }
+
+  @Inject
+  @Named("pageInfoRepository")
+  public void setPageInfoRepository(PageInfoRepository t)
+  {
+    this.pageInfoRepository = t;
+  }
+
+  @Inject
+  @Named("crawlingSessionRepository")
+  public void setCrawlingSessionRepository(CrawlingSessionRepository t)
+  {
+    this.crawlingSessionRepository = t;
+  }
+  
   @Autowired
   HostSslInfoRepository        hostSslInfoRepository;
   @Autowired
@@ -144,15 +204,15 @@ public class SSLDatabaseManager
     this.hostSslInfoRepository = t;
   }
 
-  @Autowired
-  HeaderRepository         headerRepository;
+//  @Autowired
+//  HeaderRepository         headerRepository;
   
-  @Inject
-  @Named("headerRepository")
-  public void setHeaderRepository(HeaderRepository t)
-  {
-    this.headerRepository = t;
-  }
+//  @Inject
+//  @Named("headerRepository")
+//  public void setHeaderRepository(HeaderRepository t)
+//  {
+//    this.headerRepository = t;
+//  }
   
   @Inject
   @Named("sslSessionRepository")

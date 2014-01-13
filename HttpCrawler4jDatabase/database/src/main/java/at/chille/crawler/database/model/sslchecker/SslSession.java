@@ -2,28 +2,35 @@ package at.chille.crawler.database.model.sslchecker;
 
 import javax.annotation.Resource;
 import javax.persistence.*;
+
+import at.chille.crawler.database.model.HostInfo;
+
 import java.util.*;
 
 @Entity
 public class SslSession {
 	@Id
 	@GeneratedValue
-	private Long id;
+	private Long sslId;
 	private Long timeStarted;
 	@Column(columnDefinition = "LONGTEXT")
 	private String description;
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "sslSession")
+//	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "crawlingSession")
+//	@MapKey(name = "hostName")
+//	private Map<String, HostInfo> hosts;
+	
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "sslSession")
 	@Resource(name = "VisitedSslHosts")
 	@MapKey(name = "hostSslName")
 	private Map<String, HostSslInfo> sslHosts;
 
 	public Long getId() {
-		return id;
+		return sslId;
 	}
 
 	public void setId(Long id) {
-		this.id = id;
+		this.sslId = id;
 	}
 
 	public Long getTimeStarted() {
@@ -42,7 +49,11 @@ public class SslSession {
 		this.description = description;
 	}
 
-	public Map<String, HostSslInfo> getHosts() {
+	public Map<String, HostInfo> getHosts() {
+		return null;//hosts;
+	}
+	
+	public Map<String, HostSslInfo> getSslHosts() {
 		return sslHosts;
 	}
 

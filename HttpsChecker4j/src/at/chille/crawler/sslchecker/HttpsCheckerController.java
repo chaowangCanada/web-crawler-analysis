@@ -2,8 +2,11 @@ package at.chille.crawler.sslchecker;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
+import at.chille.crawler.database.model.HostInfo;
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
 import edu.uci.ics.crawler4j.fetcher.PageFetcher;
@@ -18,7 +21,7 @@ public class HttpsCheckerController  {
 	}
 
 	protected static boolean resumable = true;
-	protected static int threads = 1;
+	protected static int workers = 1;
 
 	protected static Logger logger = Logger
 			.getLogger(HttpsCheckerController.class);
@@ -56,13 +59,15 @@ public class HttpsCheckerController  {
 
 		System.out.println("Initializing SSL Config...");
 		String crawlStorageFolder = args[0];
-		threads = Integer.parseInt(args[1]);
+		workers = Integer.parseInt(args[1]);
 		
 
 		// Try to initialize Database
 		logger.info("Initialize Database...");
 		try {
 			SSLDatabaseManager.getInstance();
+			SSLDatabaseManager.getInstance().loadLastCrawlingSession();
+			
 			if (resumable) {
 				logger.info("Loading last SSL Session...");
 				SSLDatabaseManager.getInstance().loadLastSslSession();
@@ -81,32 +86,29 @@ public class HttpsCheckerController  {
 		}
 
 		// Hint: Exit here to test database schema only
-		System.exit(0);
+		//System.exit(0);
 
-		
-		/*System.out.println("Crawling configuration:");
-		System.out.println(config);
-
-		// Instantiate the controller for this crawl.
-		logger.info("Init crawler...");
-		PageFetcher pageFetcher = new PageFetcher(config);
-		RobotstxtConfig robotstxtConfig = new RobotstxtConfig();
-		RobotstxtServer robotstxtServer = new RobotstxtServer(robotstxtConfig,
-				pageFetcher);
-		CrawlController controller = new HttpsCheckerController(config,
-				pageFetcher, robotstxtServer);
-
-		logger.info("Adding Seeds...");
-		for (String seed : StringFileReader.readLines("seeds.txt")) {
-			controller.addSeed(seed);
-			logger.info("Adding Seed: "+ seed);
+		Map<String, HostInfo> hosts = SSLDatabaseManager.getInstance().getAllHosts();
+		for(String host : hosts.keySet())
+		{
+			HostInfo hostInfo = hosts.get(host);
+			if(hostInfo != null && hostInfo.getSslProtocol() != null)
+			{
+				String protocol = hostInfo.getSslProtocol();
+				if(protocol != null && protocol != "")
+				{
+					System.out.println(protocol + ":" + host);					
+				}
+			}
 		}
+		
+		HttpsChecker checker = new HttpsChecker();
 
 		// blocking operation:
-		logger.info("Starting Crawler...");
+		logger.info("Starting Checker...");
 		// controller.start(HttpAnalysisCrawler.class, numberOfCrawlers);
-		controller
-				.startNonBlocking(HttpAnalysisCrawler.class, numberOfCrawlers);
+		//checker.start();
+		
 		while (true) {
 			System.err
 					.println("Enter: 'abort' to exit process or 'status' for status: ");
@@ -116,42 +118,30 @@ public class HttpsCheckerController  {
 			}
 			if (command.toLowerCase().equals("status")) {
 				try {
-					System.err.println("Queue Length: "
-							+ controller.getFrontier().getQueueLength());
-					System.err.println("Processed Pages: "
-							+ controller.getFrontier()
-									.getNumberOfProcessedPages());
-					// System.err.println("Assigned Pages: "
-					// + controller.getFrontier()
-					// .getNumberOfAssignedPages());
+					//TODO:
+					System.err.println("Not implemented");
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
 			}
 
 		}
-		controller.shutdown();
-		controller.waitUntilFinish();
+		//TODO:
+		//controller.shutdown();
+		//controller.waitUntilFinish();
 		// end of nonblocking version of crawler.
 
 		System.out.println("\n\n-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
-		System.out.println("Finally storing the results to the database...");
-		DatabaseManager.getInstance().saveSession();
+		//TODO: everything saved??
+		//System.out.println("Finally storing the results to the database...");
+		//SSLDatabaseManager.getInstance().saveSession();
 		System.out.println("Done: You can abort this process.");
 
 		// Final output of crawler *IF* it finished:
 		System.out.println("\n\n");
 
-		Map<String, HostInfo> visitedHosts = DatabaseManager.getInstance()
-				.getCurrentCrawlingSession().getHosts();
+		Map<String, HostInfo> visitedHosts = SSLDatabaseManager.getInstance()
+				.getCurrentSslSession().getHosts();
 		System.out.println("Size of visited hosts: " + visitedHosts.size());
-		/*
-		 * Set<Map.Entry<String, HostInfo>> set = visitedHosts.entrySet(); for
-		 * (Map.Entry<String, HostInfo> host : set) { System.out.println("  " +
-		 * host.getKey() + " (" + host.getValue().getPages().size() + ")"); } //
-		 */
-
-		// System.out.println("\n\n");
-		// System.out.println(CertificateLogger.getInstance());*/
 	}
 }
