@@ -1,0 +1,3 @@
+# Hosts that match the following regexes are skipped
+# Each line contains one regex
+.*amtc.*

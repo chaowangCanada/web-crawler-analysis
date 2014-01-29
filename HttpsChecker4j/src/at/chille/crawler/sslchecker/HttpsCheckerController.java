@@ -1,41 +1,47 @@
 package at.chille.crawler.sslchecker;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import at.chille.crawler.database.model.HostInfo;
-import edu.uci.ics.crawler4j.crawler.CrawlConfig;
-import edu.uci.ics.crawler4j.crawler.CrawlController;
-import edu.uci.ics.crawler4j.fetcher.PageFetcher;
-import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer;
+import at.chille.crawler.sslchecker.parser.SslInfo;
 
 /**
  * @author chille
  * 
  */
-public class HttpsCheckerController  {
+public class HttpsCheckerController {
 	public HttpsCheckerController() {
 	}
 
 	protected static boolean resumable = true;
-	protected static int workers = 1;
+	protected static int numWorkers = 1;
+	protected static ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(1000);
+    protected static ArrayBlockingQueue<SslInfo> resultQueue = new ArrayBlockingQueue<SslInfo>(1000);
+	protected static HttpsCheckerConfig config = new HttpsCheckerConfig(
+			"./sslscan/", 0);
 
-	protected static Logger logger = Logger
-			.getLogger(HttpsCheckerController.class);
+	private static void showHelp() {
+		System.out.println("Needed parameters: ");
+		System.out
+				.println("\t rootFolder (it will contain intermediate crawl data)");
+		System.out.println("\t numberOfWorkers (number of concurrent threads)");
+		System.out
+				.println("\t niceTimeWait (milliseconds to wait between each connection attempt to one host)");
+		return;
+	}
 
-
-  public static void main(String[] args) throws Exception {
-		if (args.length != 2) {
-			System.out.println("Needed parameters: ");
-			System.out
-					.println("\t rootFolder (it will contain intermediate crawl data)");
-			System.out
-					.println("\t numberOfWorkers (number of concurrent threads)");
-			System.out
-					.println("\t niceTimeWait (milliseconds to wait between each connection attempt to one host)");
+	public static void main(String[] args) throws Exception {
+		if (args.length != 3) {
+			showHelp();
 			return;
 		}
 		BufferedReader console = new BufferedReader(new InputStreamReader(
@@ -58,27 +64,49 @@ public class HttpsCheckerController  {
 		}
 
 		System.out.println("Initializing SSL Config...");
-		String crawlStorageFolder = args[0];
-		workers = Integer.parseInt(args[1]);
-		
+		try {
+			config.setTempFolder(args[0]);
+			numWorkers = Integer.parseInt(args[1]);
+			config.setTimesleep(Integer.parseInt(args[2]));
+		} catch (Exception e) {
+			showHelp();
+			return;
+		}
+
+		System.out.print("Testing SSL Checker...");
+		boolean sslWorking = config.testSslChecker();
+		if (!sslWorking) {
+			System.out.println("failed");
+			return;
+		}
+		System.out.println("passed");
+
+		System.out.println("Preparing temporary folder...");
+		if (!prepareTempFolder())
+			return;
+
+		System.out.println("Importing blacklist...");
+		for (String entry : StringFileReader.readLines("host-blacklist.txt")) {
+			config.addBlacklist(entry);
+		}
 
 		// Try to initialize Database
-		logger.info("Initialize Database...");
+		System.out.println("Initialize Database...");
 		try {
 			SSLDatabaseManager.getInstance();
 			SSLDatabaseManager.getInstance().loadLastCrawlingSession();
-			
+
 			if (resumable) {
-				logger.info("Loading last SSL Session...");
+				System.out.println("Loading last SSL Session...");
 				SSLDatabaseManager.getInstance().loadLastSslSession();
 			}
 			if (SSLDatabaseManager.getInstance().getCurrentSslSession() == null) {
-				logger.info("Generate New SSL Session...");
+				System.out.println("Generate New SSL Session...");
 				SSLDatabaseManager.getInstance().setNewSslSession(
 						"Crawling Testing");
 			}
 
-			//DatabaseManager.getInstance().saveSession();
+			// DatabaseManager.getInstance().saveSession();
 			// DatabaseManager.getInstance().tryAddingSomething();
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -86,62 +114,116 @@ public class HttpsCheckerController  {
 		}
 
 		// Hint: Exit here to test database schema only
-		//System.exit(0);
+		// System.exit(0);
 
-		Map<String, HostInfo> hosts = SSLDatabaseManager.getInstance().getAllHosts();
-		for(String host : hosts.keySet())
-		{
-			HostInfo hostInfo = hosts.get(host);
-			if(hostInfo != null && hostInfo.getSslProtocol() != null)
-			{
-				String protocol = hostInfo.getSslProtocol();
-				if(protocol != null && protocol != "")
-				{
-					System.out.println(protocol + ":" + host);					
+		System.out.println("Starting Workers...");
+		Thread dbWorker = new Thread(new HttpsDbWorker(resultQueue), "HttpsDbWorker");
+		dbWorker.start();
+		
+		ArrayList<Thread> workers = new ArrayList<Thread>();
+		for (int i = 0; i < numWorkers; i++) {
+			HttpsCheckerWorker checker = new HttpsCheckerWorker(config, hostQueue, resultQueue);
+			Thread t = new Thread(checker, "HttpsCheckerWorker");
+			t.start();
+			workers.add(t);
+		}
+
+		System.out.println("Loading queue with work...");
+		Map<String, HostInfo> hosts = SSLDatabaseManager.getInstance()
+				.getAllHosts();
+		for (String host : hosts.keySet()) {
+			if (!shouldVisitForInspection(host))
+				System.out.println("Filtering host " + host);
+			else {
+				HostInfo hostInfo = hosts.get(host);
+				if (hostInfo != null && hostInfo.getSslProtocol() != null) {
+					String protocol = hostInfo.getSslProtocol();
+					if (protocol != null && protocol != "") {
+						// System.out.println(protocol + ":" + host);
+						System.out
+								.println("Controller: enqueuing host " + host);
+						hostQueue.add(host);
+					}
 				}
 			}
 		}
-		
-		HttpsChecker checker = new HttpsChecker();
 
-		// blocking operation:
-		logger.info("Starting Checker...");
-		// controller.start(HttpAnalysisCrawler.class, numberOfCrawlers);
-		//checker.start();
-		
+		for (int i = 0; i < numWorkers; i++) {
+			hostQueue.add("stop");
+		}
+
 		while (true) {
 			System.err
 					.println("Enter: 'abort' to exit process or 'status' for status: ");
 			String command = console.readLine();
-			if (command.toLowerCase().equals("abort")) {
+			if (command.toLowerCase().equals("abort")
+					|| command.toLowerCase().equals("exit")
+					|| command.toLowerCase().equals("quit")) {
+				
+				//remove pending hosts from queue and signal stop
+				System.out.println("Controller: clearing working queue");
+				hostQueue.clear();
+				for (int i = 0; i < numWorkers; i++) {
+					hostQueue.add("stop");
+				}
 				break;
 			}
 			if (command.toLowerCase().equals("status")) {
 				try {
-					//TODO:
+					// TODO:
 					System.err.println("Not implemented");
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
 			}
-
 		}
-		//TODO:
-		//controller.shutdown();
-		//controller.waitUntilFinish();
-		// end of nonblocking version of crawler.
+		
+		System.out.println("Controller: waiting for all workers to finish");
+		//Now wait for all Workers to finish
+		for(Thread t : workers)
+		{
+			//wait max. 5min for each thread to stop
+			t.join(5*60*1000);
+		}
+		
+		//signal dbWorker to stop, using an empty SslParseResult
+		resultQueue.add(new SslInfo());
+		
+		//wait max. 5min for each thread to stop
+		dbWorker.join(5*60*1000);
+				
+		System.out.println("Now closing...");
+	}
 
-		System.out.println("\n\n-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
-		//TODO: everything saved??
-		//System.out.println("Finally storing the results to the database...");
-		//SSLDatabaseManager.getInstance().saveSession();
-		System.out.println("Done: You can abort this process.");
+	/**
+	 * Decides if the given HostInfo should be visited for SSL-checking. Returns
+	 * true if the host was not visited yet and the host is not on the
+	 * blacklist.
+	 * 
+	 * @param host
+	 *            to check
+	 * @return true if the URL should be visited
+	 */
+	static boolean shouldVisitForInspection(String host) {
+		for (String regex : config.getBlacklist()) {
+			if (host.matches(regex))
+				return false;
+		}
+		return true;
+	}
 
-		// Final output of crawler *IF* it finished:
-		System.out.println("\n\n");
+	static boolean prepareTempFolder() {
+		try {
+			File folder = new File(config.getTempFolder());
+			FileUtils.deleteDirectory(folder);
 
-		Map<String, HostInfo> visitedHosts = SSLDatabaseManager.getInstance()
-				.getCurrentSslSession().getHosts();
-		System.out.println("Size of visited hosts: " + visitedHosts.size());
+			folder = new File(config.getTempFolder());
+			folder.mkdirs();
+			folder.deleteOnExit();
+			return true;
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+			return false;
+		}
 	}
 }

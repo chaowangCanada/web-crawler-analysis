@@ -1,6 +1,5 @@
 package at.chille.crawler.database.model;
 import javax.persistence.*;
-import javax.validation.constraints.Size;
 
 @Entity
 public class Certificate {

@@ -52,12 +52,20 @@ public class HostSslInfo {
 		cipherSuites.add(cipherSuite);
 	}
 	
+	public void setCipherSuites(Collection<CipherSuite> cipherSuiteList) {
+		cipherSuites.addAll(cipherSuiteList);
+	}
+	
 	public Set<CipherSuite> getPreferredCipherSuites() {
 		return preferredCipherSuites;
 	}
 	
 	public void setPreferredCipherSuite(CipherSuite cipherSuite) {
 		preferredCipherSuites.add(cipherSuite);
+	}
+	
+	public void setPreferredCipherSuites(Collection<CipherSuite> cipherSuiteList) {
+		preferredCipherSuites.addAll(cipherSuiteList);
 	}
 	
 	public SslSession getSslSession() {

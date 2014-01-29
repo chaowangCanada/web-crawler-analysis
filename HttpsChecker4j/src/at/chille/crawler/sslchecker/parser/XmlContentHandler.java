@@ -4,13 +4,15 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import at.chille.crawler.database.model.sslchecker.CipherSuite;
+
 public class XmlContentHandler extends DefaultHandler {
 	
-	SslParseResult parseResult;
+	private SslInfo parseResult;
 	
 	public XmlContentHandler()
 	{
-		parseResult = new SslParseResult();
+		parseResult = new SslInfo();
 	}
 	
 	@Override
@@ -31,16 +33,16 @@ public class XmlContentHandler extends DefaultHandler {
 			}
 			suite.setTlsVersion(attributes.getValue(attributes.getIndex("sslversion")));
 			suite.setBits(Integer.parseInt(attributes.getValue(attributes.getIndex("bits"))));
-			suite.setCipher(attributes.getValue(attributes.getIndex("cipher")));
+			suite.setCipherSuite(attributes.getValue(attributes.getIndex("cipher")));
 			
 			if(status.equals("default"))
-				parseResult.setPreferred(suite);
+				getParseResult().setPreferred(suite);
 			else if(status.equals("accepted"))
-				parseResult.setAccepted(suite);
+				getParseResult().setAccepted(suite);
 			else if(status.equals("rejected"))
-				parseResult.setRejected(suite);
+				getParseResult().setRejected(suite);
 			else if(status.equals("failed"))
-				parseResult.setFailed(suite);
+				getParseResult().setFailed(suite);
 			else
 				System.err.println("XmlContentHandler: cipher-status " + status + " not supported!");	
 		}
@@ -54,5 +56,9 @@ public class XmlContentHandler extends DefaultHandler {
 	@Override
 	public void characters(char ch[], int start, int length) throws SAXException {
 			//System.out.println("Content>>"+new String(ch, start, length) + "<<");
+	}
+
+	public SslInfo getParseResult() {
+		return parseResult;
 	}
 }

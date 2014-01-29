@@ -2,7 +2,6 @@ package at.chille.crawler.database.model;
 
 import javax.annotation.Resource;
 import javax.persistence.*;
-import javax.validation.constraints.Size;
 
 import java.util.*;
 

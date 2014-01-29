@@ -3,17 +3,28 @@ package at.chille.crawler.sslchecker.parser;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SslParseResult {
+import at.chille.crawler.database.model.sslchecker.CipherSuite;
+
+public class SslInfo {
+	private String host;
 	private Set<CipherSuite> accepted;
 	private Set<CipherSuite> rejected;
 	private Set<CipherSuite> failed;
 	private Set<CipherSuite> preferred;
 	
-	public SslParseResult()
+	public SslInfo()
 	{
+		host = "";
 		accepted = new HashSet<CipherSuite>();
 		rejected = new HashSet<CipherSuite>();
 		failed = new HashSet<CipherSuite>();
+		preferred = new HashSet<CipherSuite>();
+	}
+	public String getHost() {
+		return host;
+	}
+	public void setHost(String host) {
+		this.host = host;
 	}
 	public Set<CipherSuite> getAccepted() {
 		return accepted;
