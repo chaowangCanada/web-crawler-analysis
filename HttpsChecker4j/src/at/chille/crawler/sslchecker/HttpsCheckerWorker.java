@@ -2,6 +2,7 @@ package at.chille.crawler.sslchecker;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 
 import at.chille.crawler.database.model.HostInfo;
@@ -36,9 +37,10 @@ public class HttpsCheckerWorker implements Runnable {
 
 	@Override
 	public void run() {
-		try {
-			int hostCount = 0;
-			while (true) {
+
+		int hostCount = 0;
+		while (true) {
+			try {
 				hostCount++;
 				String host = hostQueue.take();
 				if (host.equalsIgnoreCase("stop")) {
@@ -78,13 +80,14 @@ public class HttpsCheckerWorker implements Runnable {
 				SSLXmlParser parser = new SSLXmlParser();
 				HostSslInfo sslData = parser.parse(stream);
 				sslData.setHostSslName(host);
+				sslData.setTimestamp((new Date()).getTime());
 				resultQueue.add(sslData);
+				HttpsCheckerController.incrementFinishedCounter();
+			} catch (Exception e) {
+				System.err.println("Worker " + getUniqueId()
+						+ " caused exception:");
+				e.printStackTrace();
 			}
-
-		} catch (Exception e) {
-			System.err
-					.println("Worker " + getUniqueId() + " caused exception:");
-			e.printStackTrace();
 		}
 	}
 }

@@ -3,8 +3,6 @@ package at.chille.crawler.sslchecker;
 import java.util.HashSet;
 import java.util.concurrent.BlockingQueue;
 
-import org.h2.engine.Session;
-
 import at.chille.crawler.database.model.sslchecker.CipherSuite;
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 
@@ -28,39 +26,34 @@ public class HttpsDbWorker implements Runnable {
 				}
 				System.out.println("DbWorker consuming " + result.getHostSslName());
 				
-				//SSLDatabaseManager.getInstance().cipherSuiteRepository.
-//				Iterable<CipherSuite> iter = SSLDatabaseManager.getInstance().cipherSuiteRepository.findAll();
-//				HashSet<CipherSuite> ciphers = new HashSet<CipherSuite>();
-//				while(iter.iterator().hasNext())
-//				ciphers.add(iter.iterator().next());
-//				
-//				for(CipherSuite c : ciphers)
-//				{
-//					if(result.getAccepted().contains(c)){
-//						result.getAccepted().remove(c);
-//						result.getAccepted().add(c);
-//				}
-//				
-//				for(CipherSuite c : result.getRejected())
-//				{
-//					if(ciphers.contains(c))
-//						result.getRejected().remove(c);
-//				}
-//				
-//				for(CipherSuite c : result.getAccepted())
-//				{
-//					if(ciphers.contains(c))
-//						result.getAccepted().remove(c);
-//				}
-//				
-//				for(CipherSuite c : result.getAccepted())
-//				{
-//					if(ciphers.contains(c))
-//						result.getAccepted().remove(c);
-//				}
+				//Now store all ciphersuites in the db before storing the HostSslInfo result object.
+				//This is required because HostSslInfo does not specify CascadeType.ALL which would
+				//automatically store all ciphersuites. See HostSslInfo for details.
+				HashSet<CipherSuite> accepted = new HashSet<CipherSuite>();
+				HashSet<CipherSuite> rejected = new HashSet<CipherSuite>();
+				HashSet<CipherSuite> failed = new HashSet<CipherSuite>();
+				HashSet<CipherSuite> preferred = new HashSet<CipherSuite>();
 				
-				//hostSslInfo.setSslSession(SSLDatabaseManager.getInstance().getCurrentSslSession());
-				SSLDatabaseManager.getInstance().hostSslInfoRepository.save(result);
+				//
+				for(CipherSuite cs : result.getAccepted()) {
+					accepted.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
+				}
+				for(CipherSuite cs : result.getRejected()) {
+					accepted.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
+				}
+				for(CipherSuite cs : result.getFailed()) {
+					accepted.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
+				}
+				for(CipherSuite cs : result.getPreferred()) {
+					accepted.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
+				}
+				
+				result.setAccepted(accepted);
+				result.setRejected(rejected);
+				result.setFailed(failed);
+				result.setPreferred(preferred);
+				
+				SSLDatabaseManager.getInstance().getHostSSLInfoRepository().save(result);
 			}
 
 		} catch (Exception e) {

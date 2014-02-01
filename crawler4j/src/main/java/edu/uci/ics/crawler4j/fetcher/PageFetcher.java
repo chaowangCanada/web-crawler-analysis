@@ -19,9 +19,6 @@ package edu.uci.ics.crawler4j.fetcher;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
-import java.util.zip.GZIPInputStream;
-
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;

@@ -1,11 +1,6 @@
 package at.chille.crawler.sslchecker;
 
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import javax.inject.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +26,6 @@ public class SSLDatabaseManager
   private static SSLDatabaseManager                _instance;
 
   protected CrawlingSession		 	  currentCrawlingSession;
-  protected SslSession                     currentSslSession;
   
   public static SSLDatabaseManager getInstance()
   {
@@ -43,51 +37,51 @@ public class SSLDatabaseManager
     return _instance;
   }
   
-  @Deprecated
-  public synchronized void saveSession()
-  {
-    if (currentCrawlingSession == null)
-    {
-      throw new NullPointerException();
-    }
-    // "Saves a given entity. Use the returned instance for further
-    // operations as the save operation might have changed the entity
-    // instance completely."
-    currentCrawlingSession = crawlingSessionRepository
-        .save(currentCrawlingSession);
-  }
+//  @Deprecated
+//  public synchronized void saveSession()
+//  {
+//    if (currentCrawlingSession == null)
+//    {
+//      throw new NullPointerException();
+//    }
+//    // "Saves a given entity. Use the returned instance for further
+//    // operations as the save operation might have changed the entity
+//    // instance completely."
+//    currentCrawlingSession = crawlingSessionRepository
+//        .save(currentCrawlingSession);
+//  }
   
-  public synchronized HostSslInfo saveHostInfo(HostSslInfo hi)
-  {
-    // Reminder: Double store, because by saving the object changes.
-    // if it is not restored, it is saved again, and all certificates
-    // occur twice in the database every time the hostInfo is saved.
-	currentSslSession.addHostSslInfo(hi);
-    hi = hostSslInfoRepository.save(hi);
-    currentSslSession.addHostSslInfo(hi);
-    return hi;
-  }
+//  public synchronized HostSslInfo saveHostInfo(HostSslInfo hi)
+//  {
+//    // Reminder: Double store, because by saving the object changes.
+//    // if it is not restored, it is saved again, and all certificates
+//    // occur twice in the database every time the hostInfo is saved.
+//	currentSslSession.addHostSslInfo(hi);
+//    hi = hostSslInfoRepository.save(hi);
+//    currentSslSession.addHostSslInfo(hi);
+//    return hi;
+//  }
 
-  public synchronized void setNewSslSession(String description)
-  {
-	  currentSslSession = new SslSession();
-	  currentSslSession.setDescription(description);
-	  currentSslSession.setTimeStarted(new Date().getTime());
-      //currentSslSession.save(currentSslSession);
-  }
+//  public synchronized void setNewSslSession(String description)
+//  {
+//	  currentSslSession = new SslSession();
+//	  currentSslSession.setDescription(description);
+//	  currentSslSession.setTimeStarted(new Date().getTime());
+//      //currentSslSession.save(currentSslSession);
+//  }
 
-  public void loadLastSslSession()
-  {
-    long timeStartedMax = 0;
-    for (SslSession cs : sslSessionRepository.findAll())
-    {
-      if (cs.getTimeStarted().longValue() > timeStartedMax)
-      {
-        timeStartedMax = cs.getTimeStarted().longValue();
-        this.currentSslSession = cs;
-      }
-    }
-  }
+//  public void loadLastSslSession()
+//  {
+//    long timeStartedMax = 0;
+//    for (SslSession cs : sslSessionRepository.findAll())
+//    {
+//      if (cs.getTimeStarted().longValue() > timeStartedMax)
+//      {
+//        timeStartedMax = cs.getTimeStarted().longValue();
+//        this.currentSslSession = cs;
+//      }
+//    }
+//  }
   
   public void loadLastCrawlingSession()
   {
@@ -101,33 +95,16 @@ public class SSLDatabaseManager
       }
     }
   }
-
-  public SslSession getCurrentSslSession()
+  
+  public synchronized CipherSuite saveCipherSuite(CipherSuite cs)
   {
-    // not synchronized on purpose: not necessary
-    return this.currentSslSession;
-  }
-
-  public HashMap<String, Lock> lockedHosts = new HashMap<String, Lock>();
-
-  public Lock getHostLock(String hostName)
-  {
-    if (!lockedHosts.containsKey(hostName))
-      lockedHosts.put(hostName, new ReentrantLock());
-    return lockedHosts.get(hostName);
-  }
-
-  public HostSslInfo getHostSslInfo(String hostName)
-  {
-    // not synchronized on purpose: not necessary
-	HostSslInfo toReturn = currentSslSession.getSslHosts().get(hostName);
-    return toReturn;
-  }
-
-
-  public synchronized void addHostSSLInfo(HostSslInfo hostInfo)
-  {
-	  currentSslSession.addHostSslInfo(hostInfo);
+	  try{
+		  return cipherSuiteRepository.save(cs);
+	  } catch(Exception e)
+	  {
+		  e.printStackTrace();
+	  }
+	  return null;
   }
 
   public Map<String, HostInfo> getAllHosts()
@@ -154,37 +131,37 @@ public class SSLDatabaseManager
   }
 
   
+//  @Autowired
+//  HostInfoRepository        hostInfoRepository;
+//  @Autowired
+//  CertificateRepository     certificateRepository;
+//  @Autowired
+//  PageInfoRepository        pageInfoRepository;
   @Autowired
-  HostInfoRepository        hostInfoRepository;
-  @Autowired
-  CertificateRepository     certificateRepository;
-  @Autowired
-  PageInfoRepository        pageInfoRepository;
-  @Autowired
-  CrawlingSessionRepository crawlingSessionRepository;
-  @Autowired
-  HeaderRepository          headerRepository;
+  private CrawlingSessionRepository crawlingSessionRepository;
+//  @Autowired
+//  HeaderRepository          headerRepository;
 
-  @Inject
-  @Named("hostInfoRepository")
-  public void setHostInfoRepository(HostInfoRepository t)
-  {
-    this.hostInfoRepository = t;
-  }
+//  @Inject
+//  @Named("hostInfoRepository")
+//  public void setHostInfoRepository(HostInfoRepository t)
+//  {
+//    this.hostInfoRepository = t;
+//  }
 
-  @Inject
-  @Named("certificateRepository")
-  public void setCertificateRepository(CertificateRepository t)
-  {
-    this.certificateRepository = t;
-  }
+//  @Inject
+//  @Named("certificateRepository")
+//  public void setCertificateRepository(CertificateRepository t)
+//  {
+//    this.certificateRepository = t;
+//  }
 
-  @Inject
-  @Named("pageInfoRepository")
-  public void setPageInfoRepository(PageInfoRepository t)
-  {
-    this.pageInfoRepository = t;
-  }
+//  @Inject
+//  @Named("pageInfoRepository")
+//  public void setPageInfoRepository(PageInfoRepository t)
+//  {
+//    this.pageInfoRepository = t;
+//  }
 
   @Inject
   @Named("crawlingSessionRepository")
@@ -194,12 +171,12 @@ public class SSLDatabaseManager
   }
   
   @Autowired
-  HostSslInfoRepository        hostSslInfoRepository;
+  private HostSslInfoRepository        hostSslInfoRepository;
   @Autowired
-  CipherSuiteRepository		   cipherSuiteRepository;
-  @Autowired
-  SslSessionRepository         sslSessionRepository;
-
+  private CipherSuiteRepository		   cipherSuiteRepository;
+//  @Autowired
+//  SslSessionRepository         sslSessionRepository;
+//
   public HostSslInfoRepository getHostSSLInfoRepository()
   {
     return hostSslInfoRepository;
@@ -210,10 +187,10 @@ public class SSLDatabaseManager
     return cipherSuiteRepository;
   }
 
-  public SslSessionRepository getSslSessionRepository()
-  {
-    return sslSessionRepository;
-  }
+//  public SslSessionRepository getSslSessionRepository()
+//  {
+//    return sslSessionRepository;
+//  }
 
 
   @Inject
@@ -240,10 +217,10 @@ public class SSLDatabaseManager
 //    this.headerRepository = t;
 //  }
   
-  @Inject
-  @Named("sslSessionRepository")
-  public void setSslSessionRepository(SslSessionRepository t)
-  {
-    this.sslSessionRepository = t;
-  }
+//  @Inject
+//  @Named("sslSessionRepository")
+//  public void setSslSessionRepository(SslSessionRepository t)
+//  {
+//    this.sslSessionRepository = t;
+//  }
 }

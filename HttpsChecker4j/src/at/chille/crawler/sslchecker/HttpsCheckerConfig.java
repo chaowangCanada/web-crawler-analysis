@@ -1,9 +1,6 @@
 package at.chille.crawler.sslchecker;
 
-import static org.junit.Assert.assertTrue;
-
 import java.util.HashSet;
-import java.util.concurrent.ArrayBlockingQueue;
 
 public class HttpsCheckerConfig {
 	private String tempFolder;

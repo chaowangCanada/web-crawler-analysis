@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
-
 import at.chille.crawler.database.model.HostInfo;
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 
@@ -22,13 +20,19 @@ public class HttpsCheckerController {
 	public HttpsCheckerController() {
 	}
 
-	protected static boolean resumable = true;
+	protected static final int queueSize = 1000;
 	protected static int numWorkers = 1;
-	protected static ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(1000);
-    protected static ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(1000);
+	protected static ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(queueSize);
+    protected static ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(queueSize);
 	protected static HttpsCheckerConfig config = new HttpsCheckerConfig(
 			"./sslscan/", 0);
 
+	protected static int finished = 0;
+	public static synchronized void incrementFinishedCounter()
+	{
+		finished++;
+	}
+	
 	private static void showHelp() {
 		System.out.println("Needed parameters: ");
 		System.out
@@ -46,22 +50,6 @@ public class HttpsCheckerController {
 		}
 		BufferedReader console = new BufferedReader(new InputStreamReader(
 				System.in));
-
-		while (true) {
-			System.out
-					.println("Do you want to make SSL checking resumable/resume SSL? (y/yes/n/no)");
-			String command = console.readLine();
-			if (command.toLowerCase().equals("y")
-					|| command.toLowerCase().equals("yes")) {
-				resumable = true;
-				break;
-			}
-			if (command.toLowerCase().equals("n")
-					|| command.toLowerCase().equals("no")) {
-				resumable = false;
-				break;
-			}
-		}
 
 		System.out.println("Initializing SSL Config...");
 		try {
@@ -95,19 +83,6 @@ public class HttpsCheckerController {
 		try {
 			SSLDatabaseManager.getInstance();
 			SSLDatabaseManager.getInstance().loadLastCrawlingSession();
-
-			if (resumable) {
-				System.out.println("Loading last SSL Session...");
-				SSLDatabaseManager.getInstance().loadLastSslSession();
-			}
-			if (SSLDatabaseManager.getInstance().getCurrentSslSession() == null) {
-				System.out.println("Generate New SSL Session...");
-				SSLDatabaseManager.getInstance().setNewSslSession(
-						"Crawling Testing");
-			}
-
-			// DatabaseManager.getInstance().saveSession();
-			// DatabaseManager.getInstance().tryAddingSomething();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw ex;
@@ -129,8 +104,14 @@ public class HttpsCheckerController {
 		}
 
 		System.out.println("Loading queue with work...");
-		Map<String, HostInfo> hosts = SSLDatabaseManager.getInstance()
-				.getAllHosts();
+		Map<String, HostInfo> hosts;
+		try {
+			hosts = SSLDatabaseManager.getInstance()
+					.getAllHosts();
+		} catch (Exception e) {
+			System.err.println("Unable to fetch hosts. Did you run the HttpCrawler before?");
+			return;
+		}
 		for (String host : hosts.keySet()) {
 			if (!shouldVisitForInspection(host))
 				System.out.println("Filtering host " + host);
@@ -170,8 +151,13 @@ public class HttpsCheckerController {
 			}
 			if (command.toLowerCase().equals("status")) {
 				try {
-					// TODO:
-					System.err.println("Not implemented");
+					int numTotal = hosts.size();
+					int currentlyPending = hostQueue.size();
+					
+					System.err.println("Status Report:");
+					System.err.println("Total number of hosts:\t" + numTotal);
+					System.err.println("SSL-Hosts finished:\t"+ finished);
+					System.err.println("Working Queue: " + currentlyPending + "/" + queueSize);
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}

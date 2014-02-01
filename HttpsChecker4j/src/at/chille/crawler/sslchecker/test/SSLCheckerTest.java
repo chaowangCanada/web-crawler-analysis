@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.junit.Test;
@@ -97,15 +98,10 @@ public class SSLCheckerTest {
 		}
 		
 		result.setHostSslName(host);
+		result.setTimestamp((new Date()).getTime());
 		
 		SSLDatabaseManager.getInstance();
 		SSLDatabaseManager.getInstance().loadLastCrawlingSession();
-		SSLDatabaseManager.getInstance().loadLastSslSession();
-		
-		if (SSLDatabaseManager.getInstance().getCurrentSslSession() == null) {
-			SSLDatabaseManager.getInstance().setNewSslSession(
-					"Testing Session");
-		}
 		
 		//Fill up the processing queue
 		ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(2);
