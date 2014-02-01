@@ -5,8 +5,8 @@ import java.io.FileInputStream;
 import java.util.concurrent.BlockingQueue;
 
 import at.chille.crawler.database.model.HostInfo;
+import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 import at.chille.crawler.sslchecker.parser.SSLXmlParser;
-import at.chille.crawler.sslchecker.parser.SslInfo;
 
 /**
  * @author chille
@@ -14,12 +14,12 @@ import at.chille.crawler.sslchecker.parser.SslInfo;
  */
 public class HttpsCheckerWorker implements Runnable {
 	protected BlockingQueue<String> hostQueue;
-	protected BlockingQueue<SslInfo> resultQueue;
+	protected BlockingQueue<HostSslInfo> resultQueue;
 	protected HttpsCheckerConfig config;
 
 	public HttpsCheckerWorker(HttpsCheckerConfig config,
 			BlockingQueue<String> hostQueue,
-			BlockingQueue<SslInfo> resultQueue) {
+			BlockingQueue<HostSslInfo> resultQueue) {
 		this.config = config;
 		this.hostQueue = hostQueue;
 		this.resultQueue = resultQueue;
@@ -76,8 +76,8 @@ public class HttpsCheckerWorker implements Runnable {
 				// Now parse the resulting XML file
 				FileInputStream stream = new FileInputStream(file);
 				SSLXmlParser parser = new SSLXmlParser();
-				SslInfo sslData = parser.parse(stream);
-				sslData.setHost(host);
+				HostSslInfo sslData = parser.parse(stream);
+				sslData.setHostSslName(host);
 				resultQueue.add(sslData);
 			}
 

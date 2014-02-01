@@ -43,7 +43,19 @@ public class SSLDatabaseManager
     return _instance;
   }
   
-  
+  @Deprecated
+  public synchronized void saveSession()
+  {
+    if (currentCrawlingSession == null)
+    {
+      throw new NullPointerException();
+    }
+    // "Saves a given entity. Use the returned instance for further
+    // operations as the save operation might have changed the entity
+    // instance completely."
+    currentCrawlingSession = crawlingSessionRepository
+        .save(currentCrawlingSession);
+  }
   
   public synchronized HostSslInfo saveHostInfo(HostSslInfo hi)
   {
@@ -184,11 +196,18 @@ public class SSLDatabaseManager
   @Autowired
   HostSslInfoRepository        hostSslInfoRepository;
   @Autowired
+  CipherSuiteRepository		   cipherSuiteRepository;
+  @Autowired
   SslSessionRepository         sslSessionRepository;
 
   public HostSslInfoRepository getHostSSLInfoRepository()
   {
     return hostSslInfoRepository;
+  }
+  
+  public CipherSuiteRepository getCipherSuiteRepository()
+  {
+    return cipherSuiteRepository;
   }
 
   public SslSessionRepository getSslSessionRepository()
@@ -204,6 +223,13 @@ public class SSLDatabaseManager
     this.hostSslInfoRepository = t;
   }
 
+  @Inject
+  @Named("cipherSuiteRepository")
+  public void setCipherSuiteRepository(CipherSuiteRepository t)
+  {
+    this.cipherSuiteRepository = t;
+  }
+  
 //  @Autowired
 //  HeaderRepository         headerRepository;
   

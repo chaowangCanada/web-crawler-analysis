@@ -12,7 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import at.chille.crawler.database.model.HostInfo;
-import at.chille.crawler.sslchecker.parser.SslInfo;
+import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 
 /**
  * @author chille
@@ -25,7 +25,7 @@ public class HttpsCheckerController {
 	protected static boolean resumable = true;
 	protected static int numWorkers = 1;
 	protected static ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(1000);
-    protected static ArrayBlockingQueue<SslInfo> resultQueue = new ArrayBlockingQueue<SslInfo>(1000);
+    protected static ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(1000);
 	protected static HttpsCheckerConfig config = new HttpsCheckerConfig(
 			"./sslscan/", 0);
 
@@ -187,7 +187,7 @@ public class HttpsCheckerController {
 		}
 		
 		//signal dbWorker to stop, using an empty SslParseResult
-		resultQueue.add(new SslInfo());
+		resultQueue.add(new HostSslInfo());
 		
 		//wait max. 5min for each thread to stop
 		dbWorker.join(5*60*1000);

@@ -5,11 +5,12 @@ import java.io.InputStream;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 import at.chille.crawler.sslchecker.parser.XmlContentHandler;
 
 public class SSLXmlParser {
 	
-	public SslInfo parse(InputStream stream)
+	public HostSslInfo parse(InputStream stream)
 	{
 		SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 	    try {

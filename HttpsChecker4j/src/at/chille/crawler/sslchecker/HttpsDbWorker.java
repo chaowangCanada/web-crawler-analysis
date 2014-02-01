@@ -1,24 +1,17 @@
 package at.chille.crawler.sslchecker;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
-import at.chille.crawler.database.model.HostInfo;
+import org.h2.engine.Session;
+
 import at.chille.crawler.database.model.sslchecker.CipherSuite;
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
-import at.chille.crawler.sslchecker.parser.SSLXmlParser;
-import at.chille.crawler.sslchecker.parser.SslInfo;
 
 public class HttpsDbWorker implements Runnable {
-	protected BlockingQueue<SslInfo> resultQueue;
+	protected BlockingQueue<HostSslInfo> resultQueue;
 
-	public HttpsDbWorker(BlockingQueue<SslInfo> resultQueue) {
+	public HttpsDbWorker(BlockingQueue<HostSslInfo> resultQueue) {
 		this.resultQueue = resultQueue;
 	}
 
@@ -27,19 +20,47 @@ public class HttpsDbWorker implements Runnable {
 		try {
 			
 			while (true) {
-				SslInfo result = resultQueue.take();
-				if(result.getHost().length() == 0)
+				HostSslInfo result = resultQueue.take();
+				if(result.getHostSslName().length() == 0)
 				{
 					System.out.println("DbWorker now stopping");
 					return;
 				}
-				System.out.println("DbWorker consuming " + result.getHost());
+				System.out.println("DbWorker consuming " + result.getHostSslName());
 				
-				HostSslInfo hostSslInfo = new HostSslInfo();
-				hostSslInfo.setCipherSuites(result.getAccepted());
-				hostSslInfo.setPreferredCipherSuites(result.getPreferred());
+				//SSLDatabaseManager.getInstance().cipherSuiteRepository.
+//				Iterable<CipherSuite> iter = SSLDatabaseManager.getInstance().cipherSuiteRepository.findAll();
+//				HashSet<CipherSuite> ciphers = new HashSet<CipherSuite>();
+//				while(iter.iterator().hasNext())
+//				ciphers.add(iter.iterator().next());
+//				
+//				for(CipherSuite c : ciphers)
+//				{
+//					if(result.getAccepted().contains(c)){
+//						result.getAccepted().remove(c);
+//						result.getAccepted().add(c);
+//				}
+//				
+//				for(CipherSuite c : result.getRejected())
+//				{
+//					if(ciphers.contains(c))
+//						result.getRejected().remove(c);
+//				}
+//				
+//				for(CipherSuite c : result.getAccepted())
+//				{
+//					if(ciphers.contains(c))
+//						result.getAccepted().remove(c);
+//				}
+//				
+//				for(CipherSuite c : result.getAccepted())
+//				{
+//					if(ciphers.contains(c))
+//						result.getAccepted().remove(c);
+//				}
+				
 				//hostSslInfo.setSslSession(SSLDatabaseManager.getInstance().getCurrentSslSession());
-				SSLDatabaseManager.getInstance().hostSslInfoRepository.save(hostSslInfo);
+				SSLDatabaseManager.getInstance().hostSslInfoRepository.save(result);
 			}
 
 		} catch (Exception e) {

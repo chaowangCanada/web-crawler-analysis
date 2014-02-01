@@ -5,19 +5,22 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import org.junit.Test;
 
+import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 import at.chille.crawler.sslchecker.ExecConfig;
+import at.chille.crawler.sslchecker.HttpsDbWorker;
+import at.chille.crawler.sslchecker.SSLDatabaseManager;
 import at.chille.crawler.sslchecker.ShellExecutor;
 import at.chille.crawler.sslchecker.parser.SSLXmlParser;
-import at.chille.crawler.sslchecker.parser.SslInfo;
 
 public class SSLCheckerTest {
 
 	private String xmlPath = "./sslscan/";
 	private String xmlFile = xmlPath + "sslscan_test.xml";
-	
+	private String host = "tugraz.at";
 	@Test
 	public void TestShellExecutorBasic()
 	{
@@ -49,7 +52,7 @@ public class SSLCheckerTest {
 		config.setRequiredVersion("1.8.2_t");
 		config.setParam("--timesleep=10");
 		config.setParam("--xml=" + xmlFile);
-		config.setParam("tugraz.at");
+		config.setParam(host);
 		ShellExecutor checker = new ShellExecutor(config);
 		assertTrue(checker.TestConfig());
 		
@@ -68,11 +71,51 @@ public class SSLCheckerTest {
 		try {
 			FileInputStream streamIn   = new FileInputStream(xmlFile);
 			SSLXmlParser parser = new SSLXmlParser();
-			SslInfo result = parser.parse(streamIn);
+			HostSslInfo result = parser.parse(streamIn);
 			assertTrue(result != null);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	@Test
+	public void TestHttpsDbWorker()
+	{
+		File file = new File(xmlFile);
+		assertTrue("execute TestSSLScan first", file.exists());
+		HostSslInfo result = null;
+		try {
+			FileInputStream streamIn   = new FileInputStream(xmlFile);
+			SSLXmlParser parser = new SSLXmlParser();
+			result = parser.parse(streamIn);
+			assertTrue(result != null);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+		
+		result.setHostSslName(host);
+		
+		SSLDatabaseManager.getInstance();
+		SSLDatabaseManager.getInstance().loadLastCrawlingSession();
+		SSLDatabaseManager.getInstance().loadLastSslSession();
+		
+		if (SSLDatabaseManager.getInstance().getCurrentSslSession() == null) {
+			SSLDatabaseManager.getInstance().setNewSslSession(
+					"Testing Session");
+		}
+		
+		//Fill up the processing queue
+		ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(2);
+		resultQueue.add(result);
+		resultQueue.add(new HostSslInfo());	//Terminator object
+		
+		//Start the worker
+		HttpsDbWorker worker = new HttpsDbWorker(resultQueue);
+		worker.run();
+		
+		//SSLDatabaseManager.getInstance().saveSession();
 	}
 }

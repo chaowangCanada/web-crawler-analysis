@@ -5,14 +5,15 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import at.chille.crawler.database.model.sslchecker.CipherSuite;
+import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 
 public class XmlContentHandler extends DefaultHandler {
 	
-	private SslInfo parseResult;
+	private HostSslInfo parseResult;
 	
 	public XmlContentHandler()
 	{
-		parseResult = new SslInfo();
+		parseResult = new HostSslInfo();
 	}
 	
 	@Override
@@ -58,7 +59,7 @@ public class XmlContentHandler extends DefaultHandler {
 			//System.out.println("Content>>"+new String(ch, start, length) + "<<");
 	}
 
-	public SslInfo getParseResult() {
+	public HostSslInfo getParseResult() {
 		return parseResult;
 	}
 }

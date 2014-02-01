@@ -7,8 +7,6 @@ import javax.validation.constraints.Size;
 
 import at.chille.crawler.database.model.HostInfo;
 
-
-
 @Entity
 public class HostSslInfo {
 	
@@ -19,53 +17,78 @@ public class HostSslInfo {
 	@Size(max = 2000)
 	private String hostSslName;
 	
-	//@JoinColumn(name="HOST_SSL_ID")	//TODO
-	//private HostInfo hostInfo;
+	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@JoinTable(name="CIPHER_ACC_ID")
+	private Set<CipherSuite> accepted;
+	
+	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@JoinTable(name="CIPHER_REJ_ID")	
+	private Set<CipherSuite> rejected;
+	
+	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@JoinTable(name="CIPHER_FAIL_ID")	
+	private Set<CipherSuite> failed;
+	
+	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@JoinTable(name="CIPHER_PREF_ID")	
+	private Set<CipherSuite> preferred;
 	
 	private Long lastVisited;
-
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "hostSslInfo")
-	private Set<CipherSuite> cipherSuites;
-	
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "hostSslInfo")
-	private Set<CipherSuite> preferredCipherSuites;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="SSL_ID")
 	private SslSession sslSession;
 
 	public HostSslInfo() {
-		cipherSuites = new HashSet<CipherSuite>();
-		preferredCipherSuites = new HashSet<CipherSuite>();
+		hostSslName = "";
+		accepted = new HashSet<CipherSuite>();
+		rejected = new HashSet<CipherSuite>();
+		failed = new HashSet<CipherSuite>();
+		preferred = new HashSet<CipherSuite>();
 		lastVisited = 0L;
 	}
-
+	
 	public String getHostSslName() {
 		return hostSslName;
 	}
-
-	public Set<CipherSuite> getCipherSuites() {
-		return cipherSuites;
+	public void setHostSslName(String host) {
+		this.hostSslName = host;
 	}
-	
-	public void setCipherSuite(CipherSuite cipherSuite) {
-		cipherSuites.add(cipherSuite);
+	public Set<CipherSuite> getAccepted() {
+		return accepted;
 	}
-	
-	public void setCipherSuites(Collection<CipherSuite> cipherSuiteList) {
-		cipherSuites.addAll(cipherSuiteList);
+	public void setAccepted(Set<CipherSuite> accepted) {
+		this.accepted = accepted;
 	}
-	
-	public Set<CipherSuite> getPreferredCipherSuites() {
-		return preferredCipherSuites;
+	public void setAccepted(CipherSuite accepted) {
+		this.accepted.add(accepted);
 	}
-	
-	public void setPreferredCipherSuite(CipherSuite cipherSuite) {
-		preferredCipherSuites.add(cipherSuite);
+	public Set<CipherSuite> getRejected() {
+		return rejected;
 	}
-	
-	public void setPreferredCipherSuites(Collection<CipherSuite> cipherSuiteList) {
-		preferredCipherSuites.addAll(cipherSuiteList);
+	public void setRejected(Set<CipherSuite> rejected) {
+		this.rejected = rejected;
+	}
+	public void setRejected(CipherSuite rejected) {
+		this.rejected.add(rejected);
+	}
+	public Set<CipherSuite> getFailed() {
+		return failed;
+	}
+	public void setFailed(Set<CipherSuite> failed) {
+		this.failed = failed;
+	}
+	public void setFailed(CipherSuite failed) {
+		this.failed.add(failed);
+	}
+	public Set<CipherSuite> getPreferred() {
+		return preferred;
+	}
+	public void setPreferred(Set<CipherSuite> preferred) {
+		this.preferred = preferred;
+	}
+	public void setPreferred(CipherSuite preferred) {
+		this.preferred.add(preferred);
 	}
 	
 	public SslSession getSslSession() {
