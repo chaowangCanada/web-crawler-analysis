@@ -18,10 +18,15 @@ public class HttpsDbWorker implements Runnable {
 		try {
 			
 			while (true) {
+				if(Thread.interrupted()) {
+					System.err.println("DbWorker aborted.");
+					return;
+				}
+				
 				HostSslInfo result = resultQueue.take();
 				if(result.getHostSslName().length() == 0)
 				{
-					System.out.println("DbWorker now stopping");
+					System.out.println("DbWorker finished.");
 					return;
 				}
 				System.out.println("DbWorker consuming " + result.getHostSslName());

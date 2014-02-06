@@ -5,34 +5,52 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.commons.io.FileUtils;
+
 import at.chille.crawler.database.model.HostInfo;
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 
 /**
- * @author chille
+ * Class HttpsCheckerController is the main class in HttpsChecker4j.
+ * 
+ * @author sammey
  * 
  */
 public class HttpsCheckerController {
 	public HttpsCheckerController() {
 	}
 
-	protected static final int queueSize = 1000;
-	protected static int numWorkers = 1;
-	protected static ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(queueSize);
-    protected static ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(queueSize);
-	protected static HttpsCheckerConfig config = new HttpsCheckerConfig(
+	protected static final int queueSize = 100;
+
+	/**
+	 * The worker queue containing all SSL-hosts that shall be scanned by
+	 * HttpsCheckerWorkers
+	 */
+	protected static ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(
+			queueSize);
+
+	/**
+	 * The result queue containing the results from the HttpsCheckerWorkers. It
+	 * is processed by HttpsDbWorker.
+	 */
+	protected static ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(
+			queueSize);
+
+	/**
+	 * The default configuration
+	 */
+	protected static HttpsCheckerConfig config = new HttpsCheckerConfig(1,
 			"./sslscan/", 0);
 
-	protected static int finished = 0;
-	public static synchronized void incrementFinishedCounter()
-	{
-		finished++;
-	}
-	
+	/**
+	 * Statistics
+	 */
+	protected static HttpsCheckerStatistics stats;
+
 	private static void showHelp() {
 		System.out.println("Needed parameters: ");
 		System.out
@@ -40,11 +58,13 @@ public class HttpsCheckerController {
 		System.out.println("\t numberOfWorkers (number of concurrent threads)");
 		System.out
 				.println("\t niceTimeWait (milliseconds to wait between each connection attempt to one host)");
+		System.out
+				.println("\t revisitDelay (milliseconds after which another scan to the same host is allowed");
 		return;
 	}
 
 	public static void main(String[] args) throws Exception {
-		if (args.length != 3) {
+		if (args.length != 4) {
 			showHelp();
 			return;
 		}
@@ -54,8 +74,9 @@ public class HttpsCheckerController {
 		System.out.println("Initializing SSL Config...");
 		try {
 			config.setTempFolder(args[0]);
-			numWorkers = Integer.parseInt(args[1]);
+			config.setNumWorkers(Integer.parseInt(args[1]));
 			config.setTimesleep(Integer.parseInt(args[2]));
+			config.setRevisitDelay(Long.parseLong(args[3]));
 		} catch (Exception e) {
 			showHelp();
 			return;
@@ -91,48 +112,54 @@ public class HttpsCheckerController {
 		// Hint: Exit here to test database schema only
 		// System.exit(0);
 
+		System.out.println("Loading queue with work...");
+		Map<String, HostInfo> hosts;
+		try {
+			hosts = SSLDatabaseManager.getInstance().getAllHosts();
+		} catch (Exception e) {
+			System.err
+					.println("Unable to fetch hosts. Did you run the HttpCrawler before?");
+			return;
+		}
+		Thread producer = new Thread(new HttpsCheckerProducer(config,
+				hostQueue, hosts));
+		producer.start();
+
 		System.out.println("Starting Workers...");
-		Thread dbWorker = new Thread(new HttpsDbWorker(resultQueue), "HttpsDbWorker");
+		stats = new HttpsCheckerStatistics();
+		Thread dbWorker = new Thread(new HttpsDbWorker(resultQueue),
+				"HttpsDbWorker");
 		dbWorker.start();
-		
+
 		ArrayList<Thread> workers = new ArrayList<Thread>();
-		for (int i = 0; i < numWorkers; i++) {
-			HttpsCheckerWorker checker = new HttpsCheckerWorker(config, hostQueue, resultQueue);
+		for (int i = 0; i < config.getNumWorkers(); i++) {
+			HttpsCheckerWorker checker = new HttpsCheckerWorker(config,
+					hostQueue, resultQueue);
+			checker.setSuccessCallback(new LongCallback() {
+				@Override
+				public void Call(Long value) {
+					stats.incrementSuccesses();
+				}
+			});
+			checker.setFailureCallback(new LongCallback() {
+				@Override
+				public void Call(Long value) {
+					stats.incrementFailures();
+				}
+			});
+			checker.setRoundTimeCallback(new LongCallback() {
+				@Override
+				public void Call(Long value) {
+					stats.addPageScanSpeed(value);
+				}
+			});
+
 			Thread t = new Thread(checker, "HttpsCheckerWorker");
 			t.start();
 			workers.add(t);
 		}
 
-		System.out.println("Loading queue with work...");
-		Map<String, HostInfo> hosts;
-		try {
-			hosts = SSLDatabaseManager.getInstance()
-					.getAllHosts();
-		} catch (Exception e) {
-			System.err.println("Unable to fetch hosts. Did you run the HttpCrawler before?");
-			return;
-		}
-		for (String host : hosts.keySet()) {
-			if (!shouldVisitForInspection(host))
-				System.out.println("Filtering host " + host);
-			else {
-				HostInfo hostInfo = hosts.get(host);
-				if (hostInfo != null && hostInfo.getSslProtocol() != null) {
-					String protocol = hostInfo.getSslProtocol();
-					if (protocol != null && protocol != "") {
-						// System.out.println(protocol + ":" + host);
-						System.out
-								.println("Controller: enqueuing host " + host);
-						hostQueue.add(host);
-					}
-				}
-			}
-		}
-
-		for (int i = 0; i < numWorkers; i++) {
-			hostQueue.add("stop");
-		}
-
+		// Enable command interface
 		while (true) {
 			System.err
 					.println("Enter: 'abort' to exit process or 'status' for status: ");
@@ -140,64 +167,67 @@ public class HttpsCheckerController {
 			if (command.toLowerCase().equals("abort")
 					|| command.toLowerCase().equals("exit")
 					|| command.toLowerCase().equals("quit")) {
-				
-				//remove pending hosts from queue and signal stop
-				System.out.println("Controller: clearing working queue");
-				hostQueue.clear();
-				for (int i = 0; i < numWorkers; i++) {
-					hostQueue.add("stop");
-				}
+
+				producer.interrupt();
 				break;
 			}
 			if (command.toLowerCase().equals("status")) {
 				try {
-					int numTotal = hosts.size();
-					int currentlyPending = hostQueue.size();
-					
-					System.err.println("Status Report:");
-					System.err.println("Total number of hosts:\t" + numTotal);
-					System.err.println("SSL-Hosts finished:\t"+ finished);
-					System.err.println("Working Queue: " + currentlyPending + "/" + queueSize);
+					printStats(hosts.size(), hostQueue.size());
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
 			}
 		}
-		
+
 		System.out.println("Controller: waiting for all workers to finish");
-		//Now wait for all Workers to finish
-		for(Thread t : workers)
-		{
-			//wait max. 5min for each thread to stop
-			t.join(5*60*1000);
+		// Now wait for all Workers to finish
+		for (Thread t : workers) {
+			// wait max. 5min for each thread to stop
+			t.join(5 * 60 * 1000);
 		}
-		
-		//signal dbWorker to stop, using an empty SslParseResult
-		resultQueue.add(new HostSslInfo());
-		
-		//wait max. 5min for each thread to stop
-		dbWorker.join(5*60*1000);
-				
+
+		// signal dbWorker to stop, using an empty SslParseResult
+		resultQueue.put(new HostSslInfo());
+
+		while (dbWorker.isAlive()) {
+			System.err.println("Waiting for DbWorker to stop...");
+			System.err.println("Press RETURN to refresh");
+			System.err
+					.println("Enter 'abort' to abort. Note: This will result in data loss");
+			String command = console.readLine();
+			if (command.toLowerCase().equals("abort")) {
+				dbWorker.interrupt();
+				dbWorker.join();
+			}
+			continue;
+		}
+
+		printStats(hosts.size(), 0);
 		System.out.println("Now closing...");
 	}
 
-	/**
-	 * Decides if the given HostInfo should be visited for SSL-checking. Returns
-	 * true if the host was not visited yet and the host is not on the
-	 * blacklist.
-	 * 
-	 * @param host
-	 *            to check
-	 * @return true if the URL should be visited
-	 */
-	static boolean shouldVisitForInspection(String host) {
-		for (String regex : config.getBlacklist()) {
-			if (host.matches(regex))
-				return false;
+	static void printStats(int numTotal, int currentlyPending) {
+		System.err.println("Status Report:");
+		System.err.println("Total n0 of hosts:  " + numTotal);
+		System.err.println("SSL-Hosts finished: " + stats.getSuccesses());
+		System.err.println("SSL-Hosts failed:   " + stats.getFailures());
+		System.err.println("Av. seconds/host:   " + stats.getAveragePageScanSpeed());
+		System.err.println("Fastest host (sec): " + stats.getFastestPageScanSpeed());
+		System.err.println("Slowest host (sec): " + stats.getSlowestScanSpeed());
+		System.err.println("Pages per minute:   " + stats.getPagesPerMinute());
+		if (currentlyPending > 0) {
+			System.err.println("Working Queue: " + currentlyPending + "/"
+					+ queueSize);
 		}
-		return true;
 	}
 
+	/**
+	 * Setup a temporary folder for sslscan output files. The An existing folder
+	 * is emptied first.
+	 * 
+	 * @return true on success
+	 */
 	static boolean prepareTempFolder() {
 		try {
 			File folder = new File(config.getTempFolder());

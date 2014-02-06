@@ -18,6 +18,22 @@ public class HttpsCheckerWorker implements Runnable {
 	protected BlockingQueue<HostSslInfo> resultQueue;
 	protected HttpsCheckerConfig config;
 
+	protected LongCallback successCallback;
+	protected LongCallback failureCallback;
+	protected LongCallback roundTimeCallback;
+	
+	public void setSuccessCallback(LongCallback c) {
+		this.successCallback = c;
+	}
+	
+	public void setFailureCallback(LongCallback c) {
+		this.failureCallback = c;
+	}
+	
+	public void setRoundTimeCallback(LongCallback c) {
+		this.roundTimeCallback = c;
+	}
+	
 	public HttpsCheckerWorker(HttpsCheckerConfig config,
 			BlockingQueue<String> hostQueue,
 			BlockingQueue<HostSslInfo> resultQueue) {
@@ -39,13 +55,15 @@ public class HttpsCheckerWorker implements Runnable {
 	public void run() {
 
 		int hostCount = 0;
+		Long startTime = (new Date()).getTime();
+		
 		while (true) {
 			try {
 				hostCount++;
 				String host = hostQueue.take();
 				if (host.equalsIgnoreCase("stop")) {
 					System.out.println("Worker " + getUniqueId()
-							+ " now stopping");
+							+ " finished.");
 					return;
 				}
 				System.out.println("Worker " + getUniqueId()
@@ -72,6 +90,8 @@ public class HttpsCheckerWorker implements Runnable {
 				if (!file.exists()) {
 					System.err.println("Worker " + getUniqueId()
 							+ ": sslscan failed. No file produced.");
+					if(failureCallback != null)
+						failureCallback.Call(0L);
 					continue;
 				}
 
@@ -81,12 +101,23 @@ public class HttpsCheckerWorker implements Runnable {
 				HostSslInfo sslData = parser.parse(stream);
 				sslData.setHostSslName(host);
 				sslData.setTimestamp((new Date()).getTime());
-				resultQueue.add(sslData);
-				HttpsCheckerController.incrementFinishedCounter();
+				resultQueue.put(sslData);
+				
+				if(successCallback != null)
+					successCallback.Call(0L);
+				
+				if(roundTimeCallback != null) {
+					Long now = (new Date()).getTime();
+					roundTimeCallback.Call(now-startTime);
+				}
+				startTime = (new Date()).getTime();
+				
 			} catch (Exception e) {
 				System.err.println("Worker " + getUniqueId()
 						+ " caused exception:");
 				e.printStackTrace();
+				if(failureCallback != null)
+					failureCallback.Call(0L);
 			}
 		}
 	}
