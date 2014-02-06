@@ -1,0 +1,40 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>at.chille.crawler</groupId>
+	<artifactId>HttpsAnalysis4j</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+<!--	<repositories>
+		<repository>
+			<layout>legacy</layout>
+			<id>LocalRepository</id>
+			<name>LocalRepository</name>
+			<url>file:///home/chille/Daten/Studium/Dateien/seminar/web-crawler/HttpCrawler4jDatabase/database/</url>
+		</repository>
+	</repositories>-->
+
+
+	<dependencies>
+		<dependency>
+			<groupId>at.chille.crawler</groupId>
+			<artifactId>database</artifactId>
+			<scope>compile</scope>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.2.5</version>
+		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>5.1.22</version>
+		</dependency>
+		<dependency>
+			<groupId>org.resthub</groupId>
+			<artifactId>resthub-jpa</artifactId>
+			<version>2.1.1</version>
+		</dependency>
+	</dependencies>
+</project>

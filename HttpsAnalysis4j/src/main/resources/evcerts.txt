@@ -1,0 +1,112 @@
+# EV Certificates according to wikipedia
+# http://en.wikipedia.org/wiki/Extended_Validation_Certificate
+# 2013-09-26
+
+1.3.6.1.4.1.34697.2.1 AffirmTrust (EV Cert)
+1.3.6.1.4.1.34697.2.2 AffirmTrust (EV Cert)
+1.3.6.1.4.1.34697.2.3 AffirmTrust (EV Cert)
+1.3.6.1.4.1.34697.2.4 AffirmTrust (EV Cert)
+1.2.40.0.17.1.22 A-Trust (EV Cert)
+2.16.578.1.26.1.3.3 Buypass (EV Cert)
+1.3.6.1.4.1.17326.10.14.2.1.2 Camerfirma (EV Cert)
+1.3.6.1.4.1.17326.10.8.12.1.2 Camerfirma (EV Cert)
+1.3.6.1.4.1.6449.1.2.1.5.1 Comodo Group (EV Cert)
+2.16.840.1.114412.2.1 DigiCert (EV Cert)
+2.16.840.1.114412.1.3.0.2 DigiCert (EV Cert)
+2.16.528.1.1001.1.1.1.12.6.1.1.1 DigiNotar (defunct) (EV Cert)
+2.16.840.1.114028.10.1.2 Entrust (EV Cert)
+1.3.6.1.4.1.14370.1.6 GeoTrust (EV Cert)
+1.3.6.1.4.1.4146.1.1 GlobalSign (EV Cert)
+2.16.840.1.114413.1.7.23.3 Go Daddy (EV Cert)
+1.3.6.1.4.1.14777.6.1.1 Izenpe (EV Cert)
+1.3.6.1.4.1.14777.6.1.2 Izenpe (EV Cert)
+1.3.6.1.4.1.22234.2.5.2.3.1 Keynectis (EV Cert)
+1.3.6.1.4.1.782.1.2.1.8.1 Network Solutions (EV Cert)
+1.3.6.1.4.1.8024.0.2.100.1.2  QuoVadis (EV Cert)
+1.2.392.200091.100.721.1  SECOM Trust Systems (EV Cert)
+2.16.840.1.114414.1.7.23.3  Starfield Technologies (EV Cert)
+1.3.6.1.4.1.23223.2 StartCom Certification Authority (EV Cert)
+1.3.6.1.4.1.23223.1.1.1 StartCom Certification Authority (EV Cert)
+2.16.756.1.89.1.2.1.1 SwissSign (EV Cert)
+2.16.840.1.113733.1.7.48.1 Thawte (EV Cert)
+2.16.840.1.114404.1.1.2.4.1 Trustwave (EV Cert)
+2.16.840.1.113733.1.7.23.6 VeriSign (EV Cert)
+1.3.6.1.4.1.6334.1.100.1 Verizon Business (formerly Cybertrust) (EV Cert)
+2.16.840.1.114171.500.9 Wells Fargo (EV Cert)
+
+
+# http://www.oesterreich.gv.at/site/5243/default.aspx
+# 2013-09-26
+1.2.40.0.10 Wurzel-OID (gv.at)
+1.2.40.0.10.0 Experimental Teilbaum – nur für Test- und Pilotstellungen (gv.at)
+1.2.40.0.10.1 Organisation (gv.at)
+1.2.40.0.10.1.1 Allgemein – allgemeine, organisationsübergreifende Objekte (gv.at)
+1.2.40.0.10.1.1.1 Verwaltungseigenschaft (gv.at)
+1.2.40.0.10.1.1.2 Dienstleistereigenschaft (gv.at)
+1.2.40.0.10.1.2 BMI – Teilbaum für Bundesministerium für Inneres (gv.at)
+1.2.40.0.10.1.3 BMWA – Teilbaum für Bundesministerium für Wirtschaft und Arbeit (gv.at)
+1.2.40.0.10.1.4 Hauptverband der Sozialversicherungsträger (gv.at)
+1.2.40.0.10.1.5 Energie-Control GmbH, Rudolfsplatz 13a, 1010 Wien (gv.at)
+1.2.40.0.10.1.6 NÖMED - NÖ Gesundheits- und Sozialfonds, Daniel-Gran Straße 48, 3100 St. Pölten (gv.at)
+1.2.40.0.10.1.7 Stammzahlenregisterbehörde (gv.at)
+1.2.40.0.10.1.8 Bundesamt für Eich- und Vermessungswesen (BEV) (gv.at)
+1.2.40.0.10.1.9 Oberösterreichische Gesundheits- und Spitals AG(GESPAG) (gv.at)
+1.2.40.0.10.1.10  Bundeskanzleramt (gv.at)
+1.2.40.0.10.1.100 IKT-Strategie des Bundes – Teilbaum der IKT-Strategie des Bundes (gv.at)
+1.2.40.0.10.1.100.1 Objekte für PKI der IKT-Strategie des Bundes (gv.at)
+1.2.40.0.10.1.100.1.1 Policies der IKT-Strategie des Bundes (gv.at)
+1.2.40.0.10.1.100.1.1.1 Certificate Policy für Root-CA der IKT-Strategie des Bundes (gv.at)
+1.2.40.0.10.1.100.1.1.2 Certificate Policy für Server-CA der IKT-Strategie des Bundes (gv.at)
+1.2.40.0.10.1.100.1.1.3 Certificate Policy für Operative Unit-CA der IKT-Strategie des Bundes (gv.at)
+1.2.40.0.10.1.100.1.1.4 Certificate Policy für Office-CA der IKT-Strategie des Bundes (gv.at)
+1.2.40.0.10.1.100.1.1.5 Certificate Policy für Externen-CA der IKT-Strategie des Bundes (gv.at)
+1.2.40.0.10.1.202 Amt der Kärntner Landesregierung (gv.at)
+1.2.40.0.10.1.203 Amt der Niederösterreichischen Landesregierung (gv.at)
+1.2.40.0.10.1.206 Amt der Steiermärkischen Landesregierung (gv.at)
+1.2.40.0.10.2 Dienste (gv.at)
+1.2.40.0.10.2.1.0 Verzeichnisdienst (LDAP.GV.AT) - Objektklassen (gv.at)
+1.2.40.0.10.2.1.1 Verzeichnisdienst (LDAP.GV.AT) - Attributtypen (gv.at)
+1.2.40.0.10.2.1.2 Portalverbund (PVP) - Objektklassen (gv.at)
+1.2.40.0.10.2.1.3 Portalverbund (PVP) - Attribute (gv.at)
+1.2.40.0.10.2.2 Kommunikationsdienste (gv.at)
+1.2.40.0.10.2.3 Sicherheitsdienste (gv.at)
+1.2.40.0.10.3 Parteienvertreter (gv.at)
+1.2.40.0.10.3.1 Notarseigenschaft (gv.at)
+1.2.40.0.10.3.2 Rechtsanwaltseigenschaft (gv.at)
+1.2.40.0.10.3.3 Ziviltechnikereigenschaft (gv.at)
+
+# Often used other OIDs looked up by http://www.oid-info.com/
+# e.g. http://oid-info.com/get/1.2.840.113549.1.1.13
+
+2.5.29.19 Basic Constraints
+2.5.29.15 Key Usage
+2.16.840.1.113730.4.1 Netscape Server Gated Crypto (SGC) 
+2.16.840.1.113730.1.1 Netscape certificate type
+1.3.6.1.5.5.7.1.12 id-pe-logotype 
+1.3.6.1.4.1.311.10.3.3 Microsoft Server Gated Crypto (SGC) 
+1.3.6.1.5.5.7.3.2 Indicates that a certificate can be used as an SSL client certificate 
+1.3.6.1.5.5.7.3.1 Indicates that a certificate can be used as an SSL server certificate 
+
+2.16.840.1.113733.1.8.1 VeriSign Server Gated Crypto (SGC) Identifier for CA Certificates
+
+1.2.840.113549.1.1.5 RSA (PKCS #1 v1.5) with SHA-1 signature 
+1.2.840.113549.1.1.4 RSA (PKCS #1 v1.5) with MD5 signature
+1.2.840.113549.1.1.11 SHA256 with RSA Encryption
+1.2.840.113549.1.1.13 SHA512 with RSA Encryption
+
+1.3.6.1.5.5.7.1.1 Certificate Authority Information Access
+2.5.29.31 Certificate Revocation List distribution points
+2.5.29.32 Certificate policies
+2.5.29.37 extKeyUsage
+2.5.29.14 Subject key identifier
+2.5.29.35 Authority key identifier 
+2.5.29.17 Subject alternative name
+2.5.29.18 Issuer alternative name 
+2.16.840.1.113730.1.13 Netscape certificate comment
+1.3.6.1.4.1.311.21.1 MS Certificate Services CA Version
+
+  
+2.16.840.1.113730.1.4 CA Revocation URL
+1.2.840.113533.7.65.0 Entrust version extension
+1.2.752.34.2.1 Cardnumber extension (ISO 7816, ITU-T X.509 v3) 
+ 

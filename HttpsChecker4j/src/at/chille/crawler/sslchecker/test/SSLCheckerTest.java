@@ -50,7 +50,7 @@ public class SSLCheckerTest {
 		
 		ExecConfig config = new ExecConfig();
 		config.setExecutable("sslscan");
-		config.setRequiredVersion("1.8.2_t");
+		config.setRequiredVersion("1.8.2");
 		config.setParam("--timesleep=10");
 		config.setParam("--xml=" + xmlFile);
 		config.setParam(host);
