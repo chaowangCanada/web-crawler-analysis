@@ -50,6 +50,7 @@ public class ShellExecutor {
 		try {
 			Process p = Runtime.getRuntime().exec(command);
 			String result = "";
+			//TODO: Use wait-timeout and retry
 			p.waitFor();
 			
 			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
