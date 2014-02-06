@@ -1,3 +1,5 @@
+# This file contains a blacklist of hosts that are not scanned 
+# in HttpsChecker4j
+#
 # Hosts that match the following regexes are skipped
-# Each line contains one regex
-.*amtc.*
+# Each line may contain one regex

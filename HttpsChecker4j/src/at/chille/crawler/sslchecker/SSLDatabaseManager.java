@@ -20,207 +20,134 @@ import at.chille.crawler.database.repository.sslchecker.*;
  * 
  */
 @Component
-public class SSLDatabaseManager
-{
-  private static ClassPathXmlApplicationContext context = null;
-  private static SSLDatabaseManager                _instance;
+public class SSLDatabaseManager {
+	private static ClassPathXmlApplicationContext context = null;
+	private static SSLDatabaseManager _instance;
+	protected CrawlingSession currentCrawlingSession;
 
-  protected CrawlingSession		 	  currentCrawlingSession;
-  
-  public static SSLDatabaseManager getInstance()
-  {
-    if (_instance == null)
-    {
-      _instance = SSLDatabaseManager.getContext().getBean(
-          SSLDatabaseManager.class);
-    }
-    return _instance;
-  }
-  
-//  @Deprecated
-//  public synchronized void saveSession()
-//  {
-//    if (currentCrawlingSession == null)
-//    {
-//      throw new NullPointerException();
-//    }
-//    // "Saves a given entity. Use the returned instance for further
-//    // operations as the save operation might have changed the entity
-//    // instance completely."
-//    currentCrawlingSession = crawlingSessionRepository
-//        .save(currentCrawlingSession);
-//  }
-  
-//  public synchronized HostSslInfo saveHostInfo(HostSslInfo hi)
-//  {
-//    // Reminder: Double store, because by saving the object changes.
-//    // if it is not restored, it is saved again, and all certificates
-//    // occur twice in the database every time the hostInfo is saved.
-//	currentSslSession.addHostSslInfo(hi);
-//    hi = hostSslInfoRepository.save(hi);
-//    currentSslSession.addHostSslInfo(hi);
-//    return hi;
-//  }
+	/**
+	 * Singleton accessor
+	 * @return the only SSLDatabaseManager instance
+	 */
+	public static SSLDatabaseManager getInstance() {
+		if (_instance == null) {
+			_instance = SSLDatabaseManager.getContext().getBean(
+					SSLDatabaseManager.class);
+		}
+		return _instance;
+	}
 
-//  public synchronized void setNewSslSession(String description)
-//  {
-//	  currentSslSession = new SslSession();
-//	  currentSslSession.setDescription(description);
-//	  currentSslSession.setTimeStarted(new Date().getTime());
-//      //currentSslSession.save(currentSslSession);
-//  }
+	/**
+	 * Load the last crawling session from the db. 
+	 * The result is stored in currentCrawlingSession
+	 */
+	public void loadLastCrawlingSession() {
+		long timeStartedMax = 0;
+		for (CrawlingSession cs : crawlingSessionRepository.findAll()) {
+			if (cs.getTimeStarted().longValue() > timeStartedMax) {
+				timeStartedMax = cs.getTimeStarted().longValue();
+				this.currentCrawlingSession = cs;
+			}
+		}
+	}
 
-//  public void loadLastSslSession()
-//  {
-//    long timeStartedMax = 0;
-//    for (SslSession cs : sslSessionRepository.findAll())
-//    {
-//      if (cs.getTimeStarted().longValue() > timeStartedMax)
-//      {
-//        timeStartedMax = cs.getTimeStarted().longValue();
-//        this.currentSslSession = cs;
-//      }
-//    }
-//  }
-  
-  public void loadLastCrawlingSession()
-  {
-    long timeStartedMax = 0;
-    for (CrawlingSession cs : crawlingSessionRepository.findAll())
-    {
-      if (cs.getTimeStarted().longValue() > timeStartedMax)
-      {
-        timeStartedMax = cs.getTimeStarted().longValue();
-        this.currentCrawlingSession = cs;
-      }
-    }
-  }
-  
-  public synchronized CipherSuite saveCipherSuite(CipherSuite cs)
-  {
-	  try{
-		  return cipherSuiteRepository.save(cs);
-	  } catch(Exception e)
-	  {
-		  e.printStackTrace();
-	  }
-	  return null;
-  }
+	/**
+	 * Return the most recent HostSslInfo object from the db  
+	 * @param host    String of the requested host
+	 * @return the most recent HostSslInfo object or null;
+	 */
+	public synchronized HostSslInfo getMostRecentHostSslInfo(String host) {
+		HostSslInfo foundHostInfo = null;
+		Long foundTimestamp = 0L;
+		Iterable<HostSslInfo> hosts = hostSslInfoRepository.findAll();
+		for (HostSslInfo h : hosts) {
+			if (h.getHostSslName().equalsIgnoreCase((host))) {
+				Long currentTimestamp = h.getTimestamp() == null ? 0L : h
+						.getTimestamp();
+				if (foundHostInfo == null
+						|| (currentTimestamp > foundTimestamp)) {
+					foundHostInfo = h;
+					foundTimestamp = foundHostInfo.getTimestamp() == null ? 0L
+							: foundHostInfo.getTimestamp();
+				}
+			}
+		}
+		return foundHostInfo;
+	}
 
-  public Map<String, HostInfo> getAllHosts()
-  {
-	  return currentCrawlingSession.getHosts();
-  }
-  
-  protected static synchronized ApplicationContext getContext()
-  {
-    if (context == null)
-    {
-      context = new ClassPathXmlApplicationContext();
-      String[] locations =
-      { "classpath*:resthubContext.xml",
-          "classpath*:application-context-democlient.xml",
-    		  };
-      context.getEnvironment().setActiveProfiles("resthub-jpa");
-      context.setConfigLocations(locations);
+	/**
+	 * Store one CipherSuite in the database. If it already exists in the db, 
+	 * the CipherSuite object from the db is returned. 
+	 * 
+	 * @param cs is the CipherSuite to store
+	 * @return the CipherSuite object from the db or null on error
+	 */
+	public synchronized CipherSuite saveCipherSuite(CipherSuite cs) {
+		try {
+			return cipherSuiteRepository.save(cs);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
-      context.refresh();
-    }
+	/**
+	 * Retrieves all HostInfo objects from the last crawling session.
+	 * @return a map of all HostInfo objects
+	 */
+	public Map<String, HostInfo> getAllHosts() {
+		return currentCrawlingSession.getHosts();
+	}
 
-    return context;
-  }
+	/**
+	 * Initialize the ApplicationContext for the springframework. 
+	 * The specified xml-file contains the packages that are scanned
+	 * by the springframework for @Entity classes.
+	 * @return the ApplicationContext
+	 */
+	protected static synchronized ApplicationContext getContext() {
+		if (context == null) {
+			context = new ClassPathXmlApplicationContext();
+			String[] locations = { "classpath*:resthubContext.xml",
+					"classpath*:application-context-democlient.xml", };
+			context.getEnvironment().setActiveProfiles("resthub-jpa");
+			context.setConfigLocations(locations);
+			context.refresh();
+		}
 
-  
-//  @Autowired
-//  HostInfoRepository        hostInfoRepository;
-//  @Autowired
-//  CertificateRepository     certificateRepository;
-//  @Autowired
-//  PageInfoRepository        pageInfoRepository;
-  @Autowired
-  private CrawlingSessionRepository crawlingSessionRepository;
-//  @Autowired
-//  HeaderRepository          headerRepository;
+		return context;
+	}
 
-//  @Inject
-//  @Named("hostInfoRepository")
-//  public void setHostInfoRepository(HostInfoRepository t)
-//  {
-//    this.hostInfoRepository = t;
-//  }
+	@Autowired
+	private CrawlingSessionRepository crawlingSessionRepository;
+	@Autowired
+	private HostSslInfoRepository     hostSslInfoRepository;
+	@Autowired
+	private CipherSuiteRepository     cipherSuiteRepository;
 
-//  @Inject
-//  @Named("certificateRepository")
-//  public void setCertificateRepository(CertificateRepository t)
-//  {
-//    this.certificateRepository = t;
-//  }
+	public HostSslInfoRepository getHostSSLInfoRepository() {
+		return hostSslInfoRepository;
+	}
 
-//  @Inject
-//  @Named("pageInfoRepository")
-//  public void setPageInfoRepository(PageInfoRepository t)
-//  {
-//    this.pageInfoRepository = t;
-//  }
+	public CipherSuiteRepository getCipherSuiteRepository() {
+		return cipherSuiteRepository;
+	}
 
-  @Inject
-  @Named("crawlingSessionRepository")
-  public void setCrawlingSessionRepository(CrawlingSessionRepository t)
-  {
-    this.crawlingSessionRepository = t;
-  }
-  
-  @Autowired
-  private HostSslInfoRepository        hostSslInfoRepository;
-  @Autowired
-  private CipherSuiteRepository		   cipherSuiteRepository;
-//  @Autowired
-//  SslSessionRepository         sslSessionRepository;
-//
-  public HostSslInfoRepository getHostSSLInfoRepository()
-  {
-    return hostSslInfoRepository;
-  }
-  
-  public CipherSuiteRepository getCipherSuiteRepository()
-  {
-    return cipherSuiteRepository;
-  }
+	@Inject
+	@Named("crawlingSessionRepository")
+	public void setCrawlingSessionRepository(CrawlingSessionRepository t) {
+		this.crawlingSessionRepository = t;
+	}
 
-//  public SslSessionRepository getSslSessionRepository()
-//  {
-//    return sslSessionRepository;
-//  }
+	@Inject
+	@Named("hostSslInfoRepository")
+	public void setHostSslInfoRepository(HostSslInfoRepository t) {
+		this.hostSslInfoRepository = t;
+	}
 
-
-  @Inject
-  @Named("hostSslInfoRepository")
-  public void setHostSslInfoRepository(HostSslInfoRepository t)
-  {
-    this.hostSslInfoRepository = t;
-  }
-
-  @Inject
-  @Named("cipherSuiteRepository")
-  public void setCipherSuiteRepository(CipherSuiteRepository t)
-  {
-    this.cipherSuiteRepository = t;
-  }
-  
-//  @Autowired
-//  HeaderRepository         headerRepository;
-  
-//  @Inject
-//  @Named("headerRepository")
-//  public void setHeaderRepository(HeaderRepository t)
-//  {
-//    this.headerRepository = t;
-//  }
-  
-//  @Inject
-//  @Named("sslSessionRepository")
-//  public void setSslSessionRepository(SslSessionRepository t)
-//  {
-//    this.sslSessionRepository = t;
-//  }
+	@Inject
+	@Named("cipherSuiteRepository")
+	public void setCipherSuiteRepository(CipherSuiteRepository t) {
+		this.cipherSuiteRepository = t;
+	}
 }
