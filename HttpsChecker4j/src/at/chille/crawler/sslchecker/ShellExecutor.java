@@ -52,6 +52,9 @@ public class ShellExecutor {
 			String result = "";
 			//TODO: Use wait-timeout and retry
 			p.waitFor();
+			if(Thread.interrupted()) {
+				p.destroy();
+			}
 			
 			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			while(reader.ready())

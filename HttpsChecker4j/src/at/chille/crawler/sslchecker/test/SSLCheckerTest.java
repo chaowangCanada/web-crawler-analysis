@@ -75,7 +75,6 @@ public class SSLCheckerTest {
 			HostSslInfo result = parser.parse(streamIn);
 			assertTrue(result != null);
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -92,7 +91,6 @@ public class SSLCheckerTest {
 			result = parser.parse(streamIn);
 			assertTrue(result != null);
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return;
 		}

@@ -59,6 +59,13 @@ public class HttpsCheckerWorker implements Runnable {
 		
 		while (true) {
 			try {
+				if(Thread.interrupted()) {
+					System.err.println("Worker " + getUniqueId()
+							+ " aborted.");
+					if(failureCallback != null)
+						failureCallback.Call(0L);
+					return;
+				}
 				hostCount++;
 				String host = hostQueue.take();
 				if (host.equalsIgnoreCase("stop")) {
@@ -74,7 +81,7 @@ public class HttpsCheckerWorker implements Runnable {
 
 				File file = new File(xmlFileName);
 				if (file.exists() && !file.delete()) {
-					System.err.println("Unable to delete old file "
+					System.err.println("Worker " + getUniqueId() + ": unable to delete old file "
 							+ file.getCanonicalPath());
 					return;
 				}

@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Rating>
-<Handshakes>
-  <Handshake name="RSA">0</Handshake>
-</Handshakes>
-<BulkCiphers>
-  <BulkCipher name="AES128">0</BulkCipher>
-<BulkCiphers>
-<Hashes>
-  <Hash name="SHA1">0</Hash>
-</Hashes>
+    <Handshakes>
+      <Handshake name="RSA" rating="0"/>
+    </Handshakes>
+    <BulkCiphers>
+      <BulkCipher name="Caesar" rating="-10"/>
+      <BulkCipher name="AES128" rating="0">AES is a nice cipher</BulkCipher>
+      <BulkCipher name="DES" rating="-5">DES is completely deprecated. See this.awesome.webpage.com</BulkCipher>
+      <BulkCipher name="RC5" rating="-4"><![CDATA[RC5 has known weaknesses in its initial phase.
+      some more text with <special> chars & more...]]></BulkCipher>
+    </BulkCiphers>
+    <Hashes>
+      <Hash name="SHA1" rating="0"/>
+    </Hashes>
 </Rating>

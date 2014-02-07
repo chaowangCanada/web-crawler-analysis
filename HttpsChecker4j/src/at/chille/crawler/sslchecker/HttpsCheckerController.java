@@ -184,9 +184,19 @@ public class HttpsCheckerController {
 		// Now wait for all Workers to finish
 		for (Thread t : workers) {
 			// wait max. 5min for each thread to stop
+			System.out.println("Controller: waiting max. 5 min for thread " + t.getId());
 			t.join(5 * 60 * 1000);
+			
+			//If thread did not stop yet, interrupt it
+			if(t.isAlive()) {
+				System.err.println("Controller: Thread " + t.getId() + " seems dead. Try to interrupt it.");
+				t.interrupt();
+			}
+				
 		}
 
+		System.out.println("Controller: all workers stopped");
+		
 		// signal dbWorker to stop, using an empty SslParseResult
 		resultQueue.put(new HostSslInfo());
 
@@ -204,12 +214,16 @@ public class HttpsCheckerController {
 		}
 
 		printStats(hosts.size(), 0);
+		if(stats.getFailures() > 0) {
+			System.err.println("Controller: not all hosts could be scanned. You can try to rerun HttpsChecker4j.");
+		}
+		
 		System.out.println("Now closing...");
 	}
 
 	static void printStats(int numTotal, int currentlyPending) {
 		System.err.println("Status Report:");
-		System.err.println("Total n0 of hosts:  " + numTotal);
+		System.err.println("Total no. of hosts: " + numTotal);
 		System.err.println("SSL-Hosts finished: " + stats.getSuccesses());
 		System.err.println("SSL-Hosts failed:   " + stats.getFailures());
 		System.err.println("Av. seconds/host:   " + stats.getAveragePageScanSpeed());
