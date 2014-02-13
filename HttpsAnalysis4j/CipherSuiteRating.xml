@@ -27,20 +27,27 @@
       <BulkCipher name="3DES-EDE-CBC" rating=""></BulkCipher>
       <BulkCipher name="AES128" rating="0">AES with 128bits is considered as the standard</BulkCipher>
       <BulkCipher name="AES-128-CBC" rating=""></BulkCipher>
-      <BulkCipher name="AES256" rating=""></BulkCipher>
+      <BulkCipher name="AES128-GCM" rating=""></BulkCipher>
       <BulkCipher name="" rating=""></BulkCipher>
+      <BulkCipher name="" rating=""></BulkCipher>
+      <BulkCipher name="AES256" rating=""></BulkCipher>
+      <BulkCipher name="AES256-CBC" rating=""></BulkCipher>
+      <BulkCipher name="AES-256-CBC" rating=""></BulkCipher>
       <BulkCipher name="AES256-GCM" rating=""></BulkCipher>
       <BulkCipher name="" rating=""></BulkCipher>
       <BulkCipher name="CAMELLIA128" rating="0">Camellia is maybe better than AES but not so extensively investigated, therefore rated as equal as AES</BulkCipher>
-      <BulkCipher name="CAMELLIA256" rating="2"></BulkCipher>
       <BulkCipher name="" rating=""></BulkCipher>
+      <BulkCipher name="CAMELLIA256" rating="2"></BulkCipher>
       <BulkCipher name="" rating=""></BulkCipher>
       <BulkCipher name="" rating=""></BulkCipher>
       <BulkCipher name="DES" rating="-5">DES is completely deprecated. See this.awesome.webpage.com</BulkCipher>
       <BulkCipher name="DES-CBC" rating=""></BulkCipher>
+      <BulkCipher name="DES-CBC3" rating=""></BulkCipher>
       <BulkCipher name="" rating=""></BulkCipher>
       <BulkCipher name="" rating=""></BulkCipher>
+      <BulkCipher name="RC2-CBC" rating=""></BulkCipher>
       <BulkCipher name="" rating=""></BulkCipher>
+      <BulkCipher name="RC4" rating=""></BulkCipher>
       <BulkCipher name="RC5" rating="-4"><![CDATA[RC5 has known weaknesses in its initial phase.
         some more text with <special> chars & more...]]></BulkCipher>
       <BulkCipher name="" rating=""></BulkCipher>
@@ -60,6 +67,6 @@
       <Hash name="MD5" rating=""/></Hash>
       <Hash name="SHA" rating="0"/></Hash>
       <Hash name="SHA256" rating=""/></Hash>
-      <Hash name="SHA256" rating=""/></Hash>
+      <Hash name="SHA384" rating=""/></Hash>
     </Hashes>
 </Rating>
