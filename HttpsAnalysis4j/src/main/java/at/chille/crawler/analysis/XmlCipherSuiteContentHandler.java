@@ -3,9 +3,7 @@ package at.chille.crawler.analysis;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import at.chille.crawler.database.model.sslchecker.CipherSuite;
-import at.chille.crawler.database.model.sslchecker.HostSslInfo;
+import at.chille.crawler.analysis.CipherSuiteRatingRepository;
 
 public class XmlCipherSuiteContentHandler extends DefaultHandler {
 
@@ -15,7 +13,7 @@ public class XmlCipherSuiteContentHandler extends DefaultHandler {
 	private Integer rating;
 
 	public XmlCipherSuiteContentHandler() {
-		parseResult = new CipherSuiteRatingRepository();
+		parseResult = CipherSuiteRatingRepository.getInstance();
 	}
 
 	@Override
@@ -24,7 +22,8 @@ public class XmlCipherSuiteContentHandler extends DefaultHandler {
 		try {
 			content = "";
 			if (qName.equals("Handshake") || qName.equals("BulkCipher")
-					|| qName.equals("Hash")) {
+					|| qName.equals("Hash") || qName.equals("BitsOfBulkCipher")
+					|| qName.equals("TlsVersion")) {
 				name = attributes.getValue("name");
 				rating = Integer.parseInt(attributes.getValue("rating"));
 				if (name == null || rating == null) {
@@ -42,12 +41,16 @@ public class XmlCipherSuiteContentHandler extends DefaultHandler {
 			throws SAXException {
 		try {
 			if (qName.equals("Handshake")) {
-				parseResult.addHandshakeRating(name, new Rating(rating, content));
+				parseResult.addHandshakeRating(name, new SslRating(rating, content));
 			} else if (qName.equals("BulkCipher")) {
-				parseResult.addCipherRating(name, new Rating(rating, content));
+				parseResult.addCipherRating(name, new SslRating(rating, content));
 			} else if (qName.equals("Hash")) {
-				parseResult.addHashRating(name, new Rating(rating, content));
-			}
+				parseResult.addHashRating(name, new SslRating(rating, content));
+			} else if (qName.equals("BitsOfBulkCipher")) {
+        parseResult.addBitsOfBulkCipherRating(name, new SslRating(rating, content));
+      } else if (qName.equals("TlsVersion")) {
+        parseResult.addTlsVersionRating(name, new SslRating(rating, content));
+      }
 		} catch (Exception e) {
 			System.err.println("SAX-Parsing error: " + e.getMessage());
 		}
@@ -60,7 +63,7 @@ public class XmlCipherSuiteContentHandler extends DefaultHandler {
 		content += cstring.substring(start, start + length);
 	}
 
-	public CipherSuiteRatingRepository getParseResult() {
-		return parseResult;
-	}
+//	public CipherSuiteRatingRepository getParseResult() {
+//		return parseResult;
+//	}
 }

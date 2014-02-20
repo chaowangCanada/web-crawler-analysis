@@ -7,7 +7,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Component;
 
-import at.chille.crawler.database.repository.*;
 import at.chille.crawler.database.repository.sslchecker.CipherSuiteRepository;
 import at.chille.crawler.database.repository.sslchecker.HostSslInfoRepository;
 

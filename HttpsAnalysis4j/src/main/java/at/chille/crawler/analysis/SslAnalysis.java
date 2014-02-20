@@ -1,26 +1,19 @@
 package at.chille.crawler.analysis;
 
-import java.io.BufferedReader;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
-import java.io.InputStreamReader;
+import java.io.FileInputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
-import javax.net.ssl.SSLSocket;
-
-import at.chille.crawler.database.model.CrawlingSession;
-import at.chille.crawler.database.model.HostInfo;
 import at.chille.crawler.database.model.sslchecker.CipherSuite;
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
-import at.chille.crawler.database.repository.CrawlingSessionRepository;
 import at.chille.crawler.database.repository.sslchecker.HostSslInfoRepository;
 
 /**
@@ -32,16 +25,17 @@ import at.chille.crawler.database.repository.sslchecker.HostSslInfoRepository;
 public class SslAnalysis
 {
   
-  protected String      name;
-  protected String      description;
-  protected long        start         = -1;
-  protected long        end           = -1;
-  protected PrintStream out;
-  private boolean     showDetails;
-  private boolean     all_crawls;
   
-  private Map<String, ArrayList<HostSslInfoWithRating>> allHostSslInfoToAnalyze    = null;
-  private Map<String, HostSslInfoWithRating>            latestHostSslInfoToAnalyze = null;
+  protected PrintStream out;
+  protected String name;
+  protected String description;
+  protected String xmlFile = "CipherSuiteRating.xml";
+  protected long   start         = -1;
+  protected long   end           = -1;
+  private boolean  showDetails;
+  private boolean  all_crawls;
+  
+  private Map<String, ArrayList<HostSslInfoWithRating>> hostSslInfoToAnalyze = null;
 
   /**
    * Default Constructor: show details.
@@ -60,7 +54,7 @@ public class SslAnalysis
     if (all_crawls)
       name = "Analyse all Crawls";
     else 
-      name = "Analyse only latest Crawl of Hosts";
+      name = "Analyse only latest Crawl per Host";
     description = "";
     out = System.out;
     this.showDetails = showDetails;
@@ -70,12 +64,9 @@ public class SslAnalysis
   /**
    * Initialize Ssl-Analysis
    */
-  private void init(boolean all_crawls)
+  private void init()
   {
-    if (all_crawls)
-      setAllHostSslInfos();
-    else
-      setLatestCrawlHostSslInfos();
+    setHostSslInfos();
   }
 
   /**
@@ -87,44 +78,64 @@ public class SslAnalysis
    */
   public String exportToFolder(String folder)
   {
+    /*try
+    {
+      File indexFile = new File(folder, "cookies.html");
+      FileWriter fw = new FileWriter(indexFile, false);
+      BufferedWriter index = new BufferedWriter(fw);
+      index.write("<html><body><h1>Cookies</h1>");
+      index.write("<ul>");
+      index.write("<li>Https Cookies without 'Secure': " + httpsCookiesNotSecure.size() + " of "
+          + httpsCookiesCount + " HTTPS-Cookies</li>");
+      index.write("<li>HTTPonly Cookies: " + usingHttpOnly.size() + " of total " + cookies.size()
+          + " Cookies.</li>");
+      index.write("</ul>");
+      index.newLine();
+
+      // HTTPS Cookies
+      index.write("<h2>Insecure HTTPS Cookies (" + httpsCookiesNotSecure.size() + "/"
+          + httpsCookiesCount + ")</h2>");
+      index.newLine();
+      this.exportCookieMap(httpsCookiesNotSecure, index);
+
+      // HTTPonly Cookies
+      index
+          .write("<h2>HTTPonly Cookies (" + usingHttpOnly.size() + "/" + cookies.size() + ")</h2>");
+      index.newLine();
+      this.exportCookieMap(usingHttpOnly, index);
+
+      // ALL Cookies
+      index.write("<h2>All Cookies (" + cookies.size() + ")</h2>");
+      this.exportCookieMap(cookies, index);
+      index.write("</body></html>");
+      index.close();
+      fw.close();
+      return indexFile.getCanonicalPath();
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+    }*/
     return null;
   }
-
-//  public void setHostsToAnalyze(Collection<HostInfo> hostInfoToAnalyze)
-//  {
-//    this.hostInfoToAnalyze = hostInfoToAnalyze;
-//  }
-
-//  protected Collection<HostInfo> getHostSslInfosToAnalyze()
-//  {
-//    if (this.hostSslInfoToAnalyze == null)
-//    {
-//      CrawlingSession cs = selectCrawlingSession();
-//      this.hostInfoToAnalyze = cs.getHosts().values();
-//    }
-//    return this.hostInfoToAnalyze;
-//  }
-  
-    
   
   /**
    * initializes allHostSslInfoToAnalyze
    * 
    * @return none
    */
-  protected void setAllHostSslInfos() 
+  protected void setHostSslInfos() 
   {
-    HostSslInfoRepository hsir = DatabaseManager.getInstance()
-        .getHostSSLInfoRepository();
+    HostSslInfoRepository hsir = DatabaseManager.getInstance().getHostSSLInfoRepository();
     long count = hsir.count();
     
     if (count == 0)
     {
-      allHostSslInfoToAnalyze = null;
+      hostSslInfoToAnalyze = null;
       return;
     }
     
-    allHostSslInfoToAnalyze = new HashMap<String, ArrayList<HostSslInfoWithRating>>();
+    hostSslInfoToAnalyze = new HashMap<String, ArrayList<HostSslInfoWithRating>>();
     
     for (HostSslInfo hsi : hsir.findAll())
     {
@@ -136,89 +147,93 @@ public class SslAnalysis
       host_info_tmp.setPreferred(hsi.getPreferred());
       host_info_tmp.setHostSslName(hsi.getHostSslName());
       
-      if (allHostSslInfoToAnalyze.containsKey(hsi.getHostSslName()))
+      if (hostSslInfoToAnalyze.containsKey(hsi.getHostSslName()))
       {
-        allHostSslInfoToAnalyze.get(hsi.getHostSslName()).add(host_info_tmp);
+        if (this.all_crawls)
+        {
+          hostSslInfoToAnalyze.get(hsi.getHostSslName()).add(host_info_tmp);
+        }
+        // only latest crawl and therefore check if current timestamp is bigger than the one in the array
+        else if (hostSslInfoToAnalyze.get(hsi.getHostSslName()).get(0).getTimestamp() < 
+            hsi.getTimestamp())
+        {
+          hostSslInfoToAnalyze.get(hsi.getHostSslName()).get(0).setTimestamp(hsi.getTimestamp());
+          hostSslInfoToAnalyze.get(hsi.getHostSslName()).get(0).setAccepted(hsi.getAccepted());
+          hostSslInfoToAnalyze.get(hsi.getHostSslName()).get(0).setRejected(hsi.getRejected());
+          hostSslInfoToAnalyze.get(hsi.getHostSslName()).get(0).setFailed(hsi.getFailed());
+          hostSslInfoToAnalyze.get(hsi.getHostSslName()).get(0).setPreferred(hsi.getPreferred());
+        }
       }
       else // create new ArrayList
       {
         ArrayList<HostSslInfoWithRating> list_tmp = new ArrayList<HostSslInfoWithRating>();
         list_tmp.add(host_info_tmp);
-        allHostSslInfoToAnalyze.put(hsi.getHostSslName(), list_tmp);
+        hostSslInfoToAnalyze.put(hsi.getHostSslName(), list_tmp);
       }
     }
   }
-  
-  /**
-   * initializes latestHostSslInfoToAnalyze
-   * 
-   * @return none
-   */
-  protected void setLatestCrawlHostSslInfos()
-  {
-  
-    HostSslInfoRepository hsir = DatabaseManager.getInstance()
-        .getHostSSLInfoRepository();
-    long count = hsir.count();
-    
-    if (count == 0)
-    {
-      latestHostSslInfoToAnalyze = null;
-      return;
-    }
-    
-    latestHostSslInfoToAnalyze = new HashMap<String, HostSslInfoWithRating>();
-    
-    for (HostSslInfo hsi : hsir.findAll())
-    {
-      
-      if(latestHostSslInfoToAnalyze.containsKey(hsi.getHostSslName()))
-      {
-        // check if timestamp is newer
-        if (latestHostSslInfoToAnalyze.get(hsi.getHostSslName()).getTimestamp() < 
-            hsi.getTimestamp())
-        {
-          latestHostSslInfoToAnalyze.get(hsi.getHostSslName())
-              .setTimestamp(hsi.getTimestamp());
-          latestHostSslInfoToAnalyze.get(hsi.getHostSslName())
-              .setAccepted(hsi.getAccepted());
-          latestHostSslInfoToAnalyze.get(hsi.getHostSslName())
-            .setRejected(hsi.getRejected());
-          latestHostSslInfoToAnalyze.get(hsi.getHostSslName())
-            .setFailed(hsi.getFailed());
-          latestHostSslInfoToAnalyze.get(hsi.getHostSslName())
-            .setPreferred(hsi.getPreferred());
-        }
-      }
-      else // create new entry
-      {
-        HostSslInfoWithRating host_info_tmp = new HostSslInfoWithRating();
-        host_info_tmp.setTimestamp(hsi.getTimestamp());
-        host_info_tmp.setAccepted(hsi.getAccepted());
-        host_info_tmp.setRejected(hsi.getRejected());
-        host_info_tmp.setFailed(hsi.getFailed());
-        host_info_tmp.setPreferred(hsi.getPreferred());
-        host_info_tmp.setHostSslName(hsi.getHostSslName());
-        
-        latestHostSslInfoToAnalyze.put(hsi.getHostSslName(), host_info_tmp);
-      }
-    }
-  }
-
   /**
    * Method for analyzing
    */
   public int analyze()
   {
-    init(all_crawls);
+    init();
+    out.println("Time for analysis! Hosts to analyze: " + hostSslInfoToAnalyze.size() + ".");
     
-    out.println("time for analysis!");
-    if (all_crawls)
-      out.println("hosts in allHostSslInfo: " + allHostSslInfoToAnalyze.size());
-    else
-      out.println("hosts in latestHostSslInfo: " + latestHostSslInfoToAnalyze.size());
+    // create the Security-Rating for the Cipher-Suites accepted and preferred
+    long calculationCount = 0;
+    try {
+      // at first the xml-file is parsed
+      File file = new File(xmlFile);
+      assertTrue("Create a file CipherSuiteRating.xml first!", file.exists());
+      FileInputStream streamIn    = new FileInputStream(xmlFile);
+      XmlCipherSuiteParser parser = new XmlCipherSuiteParser();
+      parser.parse(streamIn);
+      
+      //iterate over all hosts in the map
+      for (Map.Entry<String, ArrayList<HostSslInfoWithRating>> entry : hostSslInfoToAnalyze.entrySet()) {
+        // iterate over all HostSslInfoWithRating in the ArrayList of every host in the map
+        for (HostSslInfoWithRating hsiwr : entry.getValue()) {
+          // get the Cipher-Rating for accepted and stored it in HostSslInfoWithRating
+          for (CipherSuite cs : hsiwr.getAccepted()) {
+            hsiwr.addSslRatingToSecurityRatingsAccepted(CipherSuiteRatingRepository.getInstance().
+                getCipherRating(cs));
+          }
+          // get the Cipher-Rating for preferred and stored it in HostSslInfoWithRating
+          for (CipherSuite cs : hsiwr.getPreferred()) {
+            out.println("preferred!!");
+            hsiwr.addSslRatingToSecurityRatingsPreferred(CipherSuiteRatingRepository.getInstance().
+                getCipherRating(cs));
+          }
+          // now calcualte the overall rating for every HostSslInfoWithRating per host
+          calculationCount++;
+          hsiwr.calculateOverallRating();
+          //if (calculationCount % 600 == 0) {
+            //out.println("###################Some testing output.#######################");
+            //printSslRatingSet(hsiwr.getSecurityRatingsAccepted(), "AcceptedCiphers");
+            printSslRatingSet(hsiwr.getSecurityRatingsPreferred(), "PreferredCiphers");
+            //out.println("##########The overall Rating for the host " + hsiwr.getHostSslName() + 
+            //    " is: " + hsiwr.getOverallRating());
+          //}
+        }
+      }
+    } catch (Exception e) {
+        System.out.println(e.getMessage());
+        e.printStackTrace();
+        return -1;
+    }
     
+    out.println("Finished analysis! Calculated " + calculationCount + " times an overall rating.");
     return 0;
+  }
+  
+  private void printSslRatingSet(Set<SslRating> s, String typeOfSet) {
+    Iterator<SslRating> it = s.iterator();
+    while (it.hasNext()) {
+      SslRating r = it.next();
+      out.println("Output of " + typeOfSet + ": Value is " + r.getValue() + ", "
+          + "CipherSuite is " + r.getCipherSuite().getCipherSuite() + " and Description is: " + r.getDescription());
+    }
   }
 
   /**
