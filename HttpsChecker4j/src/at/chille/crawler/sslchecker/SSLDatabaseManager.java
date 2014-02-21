@@ -1,6 +1,8 @@
 package at.chille.crawler.sslchecker;
 
+import java.util.HashMap;
 import java.util.Map;
+
 import javax.inject.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,12 +53,40 @@ public class SSLDatabaseManager {
 		}
 	}
 
+	protected Map<String, HostSslInfo> lastHostSslInfos;
+	public synchronized void loadLastHostSslInfos()
+	{
+		lastHostSslInfos = new HashMap<String, HostSslInfo>();
+		Iterable<HostSslInfo> hosts = hostSslInfoRepository.findAll();
+		for (HostSslInfo h : hosts) {
+			HostSslInfo lastInfo = lastHostSslInfos.get(h.getHostSslName());
+			if(lastInfo == null) {
+				lastHostSslInfos.put(h.getHostSslName(), h);
+			} else {
+				Long lastTimestamp = lastInfo.getTimestamp() == null ? 
+						0L : lastInfo.getTimestamp();
+				Long currentTimestamp = h.getTimestamp() == null ? 
+						0L : h.getTimestamp();
+				
+				if (currentTimestamp > lastTimestamp) {
+					//found a newer HostSslInfo
+					lastHostSslInfos.put(h.getHostSslName(), h);
+				}
+			}
+		}
+	}
+	
+	public synchronized HostSslInfo getMostRecentHostSslInfo(String host) {
+		return lastHostSslInfos.get(host);
+	}
+	
 	/**
+	 * @deprecated
 	 * Return the most recent HostSslInfo object from the db  
 	 * @param host    String of the requested host
 	 * @return the most recent HostSslInfo object or null;
 	 */
-	public synchronized HostSslInfo getMostRecentHostSslInfo(String host) {
+	public synchronized HostSslInfo getMostRecentHostSslInfoDb(String host) {
 		HostSslInfo foundHostInfo = null;
 		Long foundTimestamp = 0L;
 		Iterable<HostSslInfo> hosts = hostSslInfoRepository.findAll();

@@ -53,6 +53,7 @@ public class ShellExecutor {
 			//TODO: Use wait-timeout and retry
 			p.waitFor();
 			if(Thread.interrupted()) {
+				System.err.println("Aborting ShellExecutor command " + command);
 				p.destroy();
 			}
 			

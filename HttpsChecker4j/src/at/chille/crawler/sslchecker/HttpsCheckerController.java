@@ -109,6 +109,9 @@ public class HttpsCheckerController {
 			throw ex;
 		}
 
+		System.out.println("Loading last SSL-Hosts...");
+		SSLDatabaseManager.getInstance().loadLastHostSslInfos();
+		
 		// Hint: Exit here to test database schema only
 		// System.exit(0);
 
@@ -168,6 +171,7 @@ public class HttpsCheckerController {
 					|| command.toLowerCase().equals("exit")
 					|| command.toLowerCase().equals("quit")) {
 
+				System.err.println("Controller: signaling workers to stop.");
 				producer.interrupt();
 				break;
 			}
@@ -179,39 +183,45 @@ public class HttpsCheckerController {
 				}
 			}
 		}
-
-		System.out.println("Controller: waiting for all workers to finish");
+		
+		/**
+		 * Now wait max. 5min for all running worker threads to finish.
+		 */
+		Long abortTime = (new Date()).getTime();
+		Long timeout = 5 * 60 * 1000L;
+		Long shortTimeout = 60 * 1000L;
+		System.out.println("Controller: waiting max. 5 minutes for all workers to finish");
 		// Now wait for all Workers to finish
 		for (Thread t : workers) {
-			// wait max. 5min for each thread to stop
-			System.out.println("Controller: waiting max. 5 min for thread " + t.getId());
-			t.join(5 * 60 * 1000);
+			// wait max. 5min for the worker threads to stop
+			System.out.println("Controller: waiting max. 5 minutes for thread " + t.getId() + " to stop...");
+			if((new Date()).getTime() - abortTime < timeout) {
+				t.join(timeout);
+			} 
 			
 			//If thread did not stop yet, interrupt it
 			if(t.isAlive()) {
-				System.err.println("Controller: Thread " + t.getId() + " seems dead. Try to interrupt it.");
+				System.err.println("Controller: Thread " + t.getId() + " seems dead. Interrupt it.");
 				t.interrupt();
-			}
-				
+			}	
 		}
-
-		System.out.println("Controller: all workers stopped");
 		
 		// signal dbWorker to stop, using an empty SslParseResult
 		resultQueue.put(new HostSslInfo());
 
-		while (dbWorker.isAlive()) {
-			System.err.println("Waiting for DbWorker to stop...");
-			System.err.println("Press RETURN to refresh");
-			System.err
-					.println("Enter 'abort' to abort. Note: This will result in data loss");
-			String command = console.readLine();
-			if (command.toLowerCase().equals("abort")) {
-				dbWorker.interrupt();
-				dbWorker.join();
-			}
-			continue;
+		System.out.println("Controller: waiting for DbWorker to stop...");
+		if((new Date()).getTime() - abortTime < timeout) {
+			dbWorker.join(timeout);
+		} else {
+			dbWorker.join(shortTimeout);
 		}
+		if(dbWorker.isAlive()) {
+			System.err.println("Controller: DbWorker seems dead. Interrupt it.");
+			dbWorker.interrupt();
+			dbWorker.join();
+		}
+		
+		System.out.println("Controller: all workers stopped");
 
 		printStats(hosts.size(), 0);
 		if(stats.getFailures() > 0) {

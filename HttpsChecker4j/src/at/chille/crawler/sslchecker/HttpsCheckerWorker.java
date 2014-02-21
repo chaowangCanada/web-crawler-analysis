@@ -59,6 +59,7 @@ public class HttpsCheckerWorker implements Runnable {
 		
 		while (true) {
 			try {
+				startTime = (new Date()).getTime();
 				if(Thread.interrupted()) {
 					System.err.println("Worker " + getUniqueId()
 							+ " aborted.");
@@ -117,7 +118,6 @@ public class HttpsCheckerWorker implements Runnable {
 					Long now = (new Date()).getTime();
 					roundTimeCallback.Call(now-startTime);
 				}
-				startTime = (new Date()).getTime();
 				
 			} catch (Exception e) {
 				System.err.println("Worker " + getUniqueId()
