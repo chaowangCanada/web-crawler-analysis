@@ -16,6 +16,12 @@ public class HttpsCheckerConfig {
 	private int numWorkers = 1;
 	
 	/**
+	 * This file contains one host per line that shall be scanned. 
+	 * If hostFile is empty, the hosts from the database are used.
+	 */
+	private String hostFile = "";
+	
+	/**
 	 * The temporary folder to store intermediate results
 	 */
 	private String tempFolder;
@@ -32,6 +38,51 @@ public class HttpsCheckerConfig {
 	 */
 	private Long revisitDelay = 0L;
 	
+	/**
+	 * The timeout for a host to finish when aborting
+	 */
+	private Long hostTimeout = 0L;
+	
+	/**
+	 * If true, rejected ciphersuites are not stored in the db.
+	 */
+	private boolean omitRejectedCipherSuites = false;
+	
+	/**
+	 * If true, failed ciphersuites are not stored in the db.
+	 */
+	private boolean omitFailedCipherSuites = false;
+	
+	private boolean scanTLSv1 = true;
+	private boolean scanSSLv3 = false;
+	private boolean scanSSLv2 = false;
+	
+	public String toString() {
+		String result = "";
+		result += "Configuration:";
+		if(hostFile != null && hostFile.length() > 0) {
+			result += "\n  hosts = " + hostFile;
+		} else {
+			result += "\n  hosts are read from database";
+		}
+		result += "\n  numWorkers   = " + numWorkers;
+		result += "\n  temp         = " + tempFolder;
+		result += "\n  blacklist:";
+		for(String s : blacklist) {
+			result += "\n    " + s;
+		}
+		result += "\n  niceWait     = " + timesleep + "ms";
+		result += "\n  revisitDelay = " + revisitDelay + "ms";
+		result += "\n  hostTimeout  = " + hostTimeout + "ms";
+		result += "\n  TLSv1        = " + scanTLSv1;
+		result += "\n  SSLv3        = " + scanSSLv3;
+		result += "\n  SSLv2        = " + scanSSLv2;
+		result += "\n  omitRejected = " + omitRejectedCipherSuites;
+		result += "\n  omitFailed   = " + omitFailedCipherSuites;
+		result += "\n";
+		
+		return result;
+	}
 	public HttpsCheckerConfig(int numWorkers, String tempFolder, int timesleep)
 	{
 		this.setNumWorkers(numWorkers);
@@ -48,6 +99,12 @@ public class HttpsCheckerConfig {
 		this.numWorkers = numWorkers;
 	}
 
+	public String getHostFile() {
+		return hostFile;
+	}
+	public void setHostFile(String hostFile) {
+		this.hostFile = hostFile;
+	}
 	public String getTempFolder() {
 		return tempFolder;
 	}
@@ -72,6 +129,52 @@ public class HttpsCheckerConfig {
 
 	public void setRevisitDelay(Long revisitDelay) {
 		this.revisitDelay = revisitDelay;
+	}
+
+	public Long getHostTimeout() {
+		return hostTimeout;
+	}
+	public void setHostTimeout(Long hostTimeout) {
+		this.hostTimeout = hostTimeout;
+	}
+	public boolean omitRejectedCipherSuites() {
+		return omitRejectedCipherSuites;
+	}
+
+	public void setOmitRejectedCipherSuites(boolean omitRejectedCipherSuites) {
+		this.omitRejectedCipherSuites = omitRejectedCipherSuites;
+	}
+
+	public boolean omitFailedCipherSuites() {
+		return omitFailedCipherSuites;
+	}
+
+	public void setOmitFailedCipherSuites(boolean omitFailedCipherSuites) {
+		this.omitFailedCipherSuites = omitFailedCipherSuites;
+	}
+
+	public boolean isScanTLSv1() {
+		return scanTLSv1;
+	}
+
+	public void setScanTLSv1(boolean scanTLSv1) {
+		this.scanTLSv1 = scanTLSv1;
+	}
+
+	public boolean isScanSSLv3() {
+		return scanSSLv3;
+	}
+
+	public void setScanSSLv3(boolean scanSSLv3) {
+		this.scanSSLv3 = scanSSLv3;
+	}
+
+	public boolean isScanSSLv2() {
+		return scanSSLv2;
+	}
+
+	public void setScanSSLv2(boolean scanSSLv2) {
+		this.scanSSLv2 = scanSSLv2;
 	}
 
 	public Iterable<String> getBlacklist()

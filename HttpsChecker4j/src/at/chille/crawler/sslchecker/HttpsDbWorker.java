@@ -8,8 +8,11 @@ import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 
 public class HttpsDbWorker implements Runnable {
 	protected BlockingQueue<HostSslInfo> resultQueue;
-
-	public HttpsDbWorker(BlockingQueue<HostSslInfo> resultQueue) {
+	protected HttpsCheckerConfig config;
+	
+	public HttpsDbWorker(HttpsCheckerConfig config,
+			BlockingQueue<HostSslInfo> resultQueue) {
+		this.config = config;
 		this.resultQueue = resultQueue;
 	}
 
@@ -39,18 +42,21 @@ public class HttpsDbWorker implements Runnable {
 				HashSet<CipherSuite> failed = new HashSet<CipherSuite>();
 				HashSet<CipherSuite> preferred = new HashSet<CipherSuite>();
 				
-				//
 				for(CipherSuite cs : result.getAccepted()) {
 					accepted.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
 				}
-				for(CipherSuite cs : result.getRejected()) {
-					accepted.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
+				if(!config.omitRejectedCipherSuites()) {
+					for(CipherSuite cs : result.getRejected()) {
+						rejected.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
+					}
 				}
-				for(CipherSuite cs : result.getFailed()) {
-					accepted.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
+				if(!config.omitFailedCipherSuites()) {
+					for(CipherSuite cs : result.getFailed()) {
+						failed.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
+					}
 				}
 				for(CipherSuite cs : result.getPreferred()) {
-					accepted.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
+					preferred.add(SSLDatabaseManager.getInstance().saveCipherSuite(cs));					
 				}
 				
 				result.setAccepted(accepted);

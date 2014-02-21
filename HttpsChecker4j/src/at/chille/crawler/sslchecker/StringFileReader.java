@@ -8,7 +8,7 @@ import java.util.List;
 
 public class StringFileReader {
 
-	public static List<String> readLines(String filename) {
+	public static List<String> readLines(String filename) throws IOException {
 		BufferedReader reader = null;
 		List<String> lines = new ArrayList<String>();
 		try {
@@ -22,18 +22,13 @@ public class StringFileReader {
 					lines.add(line);
 				}
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		} finally {
 			try {
 				if (reader != null)
 					reader.close();
 			} catch (IOException e) {
-				e.printStackTrace();
 			}
 		}
-
 		return lines;
 	}
-
 }

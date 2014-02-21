@@ -37,13 +37,13 @@ public class XmlContentHandler extends DefaultHandler {
 			suite.setCipherSuite(attributes.getValue(attributes.getIndex("cipher")));
 			
 			if(status.equals("default"))
-				getParseResult().setPreferred(suite);
+				getParseResult().addPreferred(suite);
 			else if(status.equals("accepted"))
-				getParseResult().setAccepted(suite);
+				getParseResult().addAccepted(suite);
 			else if(status.equals("rejected"))
-				getParseResult().setRejected(suite);
+				getParseResult().addRejected(suite);
 			else if(status.equals("failed"))
-				getParseResult().setFailed(suite);
+				getParseResult().addFailed(suite);
 			else
 				System.err.println("XmlContentHandler: cipher-status " + status + " not supported!");	
 		}

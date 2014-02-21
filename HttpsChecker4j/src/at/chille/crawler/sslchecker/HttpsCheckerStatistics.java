@@ -1,20 +1,38 @@
 package at.chille.crawler.sslchecker;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+
+import javax.security.auth.callback.TextOutputCallback;
 
 public class HttpsCheckerStatistics {
 	private int successes;
 	private int failures;
 	private ArrayList<Long> speed;
 	private Long startTime;
-	
-	public HttpsCheckerStatistics()
+	private String logfilename = "failures.txt";
+	private OutputStream logfileStream;
+	public HttpsCheckerStatistics() throws IOException
 	{
 		successes = 0;
 		failures = 0;
 		speed = new ArrayList<Long>();
 		startTime = (new Date()).getTime();
+		logfileStream = new FileOutputStream(logfilename, true);
+		String separator = "================================================================================\n";
+		String header = "Log started: " + (new Date()).toString();
+		logfileStream.write(separator.getBytes());
+		logfileStream.write(header.getBytes());
+	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		logfileStream.close();
+		super.finalize();
 	}
 	
 	public synchronized void incrementSuccesses()
@@ -91,5 +109,13 @@ public class HttpsCheckerStatistics {
 		Long upTime = (new Date()).getTime() - startTime;
 		float minutes = upTime / (60*1000.0f);
 		return this.speed.size() / minutes;
+	}
+
+	public void logFailure(String value) {
+		try {
+			value = value.trim() + "\n";
+			logfileStream.write(value.getBytes());
+		} catch (IOException e) {
+		}
 	}
 }

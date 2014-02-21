@@ -3,3 +3,8 @@
 #
 # Hosts that match the following regexes are skipped
 # Each line may contain one regex
+# For usage of regex in java, see: 
+#   http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html
+# 
+# Examples:
+# .*        Filter everything

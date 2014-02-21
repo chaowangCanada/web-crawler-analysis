@@ -7,11 +7,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import org.junit.Test;
 
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 import at.chille.crawler.sslchecker.ExecConfig;
+import at.chille.crawler.sslchecker.HttpsCheckerConfig;
+import at.chille.crawler.sslchecker.HttpsCheckerWorker;
 import at.chille.crawler.sslchecker.HttpsDbWorker;
 import at.chille.crawler.sslchecker.SSLDatabaseManager;
 import at.chille.crawler.sslchecker.ShellExecutor;
@@ -22,6 +25,7 @@ public class SSLCheckerTest {
 	private String xmlPath = "./sslscan/";
 	private String xmlFile = xmlPath + "sslscan_test.xml";
 	private String host = "tugraz.at";
+	
 	@Test
 	public void TestShellExecutorBasic()
 	{
@@ -82,6 +86,10 @@ public class SSLCheckerTest {
 	@Test
 	public void TestHttpsDbWorker()
 	{
+		HttpsCheckerConfig config = new HttpsCheckerConfig(0, "", 0);
+		config.setOmitRejectedCipherSuites(true);
+		config.setOmitFailedCipherSuites(true);
+		
 		File file = new File(xmlFile);
 		assertTrue("execute TestSSLScan first", file.exists());
 		HostSslInfo result = null;
@@ -107,9 +115,70 @@ public class SSLCheckerTest {
 		resultQueue.add(new HostSslInfo());	//Terminator object
 		
 		//Start the worker
-		HttpsDbWorker worker = new HttpsDbWorker(resultQueue);
+		HttpsDbWorker worker = new HttpsDbWorker(config, resultQueue);
 		worker.run();
 		
 		//SSLDatabaseManager.getInstance().saveSession();
+	}
+	
+	@Test
+	public void TestSSLScanWorker()
+	{
+		HttpsCheckerConfig config = new HttpsCheckerConfig(1, "sslscan", 0);
+		config.setOmitRejectedCipherSuites(true);
+		config.setOmitFailedCipherSuites(true);
+		
+		File file = new File(xmlFile);
+		File path = new File(xmlPath);
+		
+		if(file.exists())
+			assertTrue(file.delete());
+		assertTrue(!file.exists());
+		
+		if(!path.exists())
+			assertTrue(path.mkdir());
+		
+		ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(2);
+		ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(6);
+		
+		config.setScanTLSv1(false);
+		config.setScanSSLv3(false);
+		config.setScanSSLv2(true);
+		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
+		assertTrue(resultQueue.size() == 1);
+		System.out.println("Worker Test SSLv2 succeeded.");
+		
+		config.setScanSSLv3(true);
+		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
+		assertTrue(resultQueue.size() == 1);
+		System.out.println("Worker Test SSLv2 and SSLv3 succeeded.");
+		
+		config.setScanTLSv1(true);
+		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
+		assertTrue(resultQueue.size() == 1);
+		
+		System.out.println("Worker Test TLSv1, SSLv3 and SSLv2 succeeded.");
+		System.out.println("Now write result into DB");
+		
+		resultQueue.add(new HostSslInfo());	//Terminator object
+		HttpsDbWorker worker = new HttpsDbWorker(config, resultQueue);
+		worker.run();
+	}
+	
+	public void TestSslScanWorkerSingle(HttpsCheckerConfig config, 
+			BlockingQueue<String> hostQueue, 
+			BlockingQueue<HostSslInfo> resultQueue)
+	{
+		try {
+			hostQueue.clear();
+			resultQueue.clear();
+			hostQueue.put(host);
+			hostQueue.put("stop");
+			(new HttpsCheckerWorker(config, hostQueue, resultQueue)).run();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			assertTrue(false);
+		}
 	}
 }

@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -52,36 +54,96 @@ public class HttpsCheckerController {
 	protected static HttpsCheckerStatistics stats;
 
 	private static void showHelp() {
-		System.out.println("Needed parameters: ");
-		System.out
-				.println("\t rootFolder (it will contain intermediate crawl data)");
-		System.out.println("\t numberOfWorkers (number of concurrent threads)");
-		System.out
-				.println("\t niceTimeWait (milliseconds to wait between each connection attempt to one host)");
-		System.out
-				.println("\t revisitDelay (milliseconds after which another scan to the same host is allowed");
+		System.out.println("          HTTPS Checker utility");
+		System.out.println("                version 1.0");
+		System.out.println("");
+		System.out.println("Options - default parameters are in (brackets)");
+		System.out.println("hosts=<file>            contains one host per line to scan. ");
+		System.out.println("                        If this parameter is omitted, hosts are taken from the database");
+		System.out.println("blacklist=<file>        contains one regex per line to blacklist hosts (blacklist.txt)");
+		System.out.println("temp=<folder>           folder for intermediate scan data (temp)");
+		System.out.println("workers=<integer>       number of concurrent scanning threads (5)");
+		System.out.println("niceWait=<millisec>     time to wait between each connection attempt to one host (1000)");
+		System.out.println("revisitDelay=<millisec> timespan after which another scan to the same host is allowed (0)");
+		System.out.println("tlsv1=<true|false>      scan TLSv1 ciphersuites (true)");
+		System.out.println("sslv3=<true|false>      scan SSLv3 ciphersuites (true)");
+		System.out.println("sslv2=<true|false>      scan SSLv2 ciphersuites (false)");
+		System.out.println("omitRejected            don't store rejected ciphersuites in database");
+		System.out.println("omitFailed              don't store failed ciphersuites in database");
+		System.out.println("--help                  show this help page");
 		return;
 	}
 
 	public static void main(String[] args) throws Exception {
-		if (args.length != 4) {
-			showHelp();
-			return;
-		}
+		//Initialize default configuration
+		String blacklistFile = "blacklist.txt";
+		config.setHostFile("");
+		config.setTempFolder("temp");
+		config.setNumWorkers(5);
+		config.setTimesleep(1000);
+		config.setRevisitDelay(0L);
+		config.setScanTLSv1(true);
+		config.setScanSSLv3(true);
+		config.setScanSSLv2(false);
+		config.setOmitRejectedCipherSuites(false);
+		config.setOmitFailedCipherSuites(false);
+		
 		BufferedReader console = new BufferedReader(new InputStreamReader(
 				System.in));
 
 		System.out.println("Initializing SSL Config...");
 		try {
-			config.setTempFolder(args[0]);
-			config.setNumWorkers(Integer.parseInt(args[1]));
-			config.setTimesleep(Integer.parseInt(args[2]));
-			config.setRevisitDelay(Long.parseLong(args[3]));
+			for(String a : args) {
+				if(a.equals("-h") || a.equals("-help") || a.equals("--help")) {
+					showHelp();
+					return;
+				} else if (a.startsWith("hosts=")) {
+					config.setHostFile(a.replace("hosts=", ""));
+				} else if (a.startsWith("blacklist=")) {
+					blacklistFile = a.replace("blacklist=", "");
+				} else if(a.startsWith("temp=")) {
+					config.setTempFolder(a.replace("temp=", ""));
+				} else if (a.startsWith("workers=")) {
+					config.setNumWorkers(Integer.parseInt(a.replace("workers=", "")));
+				} else if (a.startsWith("niceWait=")) {
+					config.setTimesleep(Integer.parseInt(a.replace("niceWait=", "")));
+				} else if (a.startsWith("revisitDelay=")) {
+					config.setRevisitDelay(Long.parseLong(a.replace("revisitDelay=",  "")));
+				} else if (a.startsWith("tlsv1=")) {
+					config.setScanTLSv1(Boolean.parseBoolean(a.replace("tlsv1=", "")));
+				} else if (a.startsWith("sslv3=")) {
+					config.setScanSSLv3(Boolean.parseBoolean(a.replace("sslv3=", "")));
+				} else if (a.startsWith("sslv2=")) {
+					config.setScanSSLv2(Boolean.parseBoolean(a.replace("sslv2=", "")));
+				} else if (a.startsWith("omitRejected")) {
+					config.setOmitRejectedCipherSuites(true);
+				} else if (a.startsWith("omitFailed")) {
+					config.setOmitFailedCipherSuites(true);
+				}
+			}
 		} catch (Exception e) {
 			showHelp();
 			return;
 		}
-
+		
+		/**
+		 * about 220 ciphersuites, round up to 300
+		 * (scantime + timesleep) milliseconds per ciphersuite
+		 * scantime is estimated with 200ms
+		 * multiplied with number (TLSv1, SSLv3 and SSLv2)
+		 */
+		int num = 0;
+		if(config.isScanTLSv1()) {
+			num++;
+		}
+		if(config.isScanSSLv3()) {
+			num++;
+		}
+		if(config.isScanSSLv2()) {
+			num++;
+		}
+		config.setHostTimeout(300L * (100 + config.getTimesleep()) * num);
+		
 		System.out.print("Testing SSL Checker...");
 		boolean sslWorking = config.testSslChecker();
 		if (!sslWorking) {
@@ -95,21 +157,18 @@ public class HttpsCheckerController {
 			return;
 
 		System.out.println("Importing blacklist...");
-		for (String entry : StringFileReader.readLines("host-blacklist.txt")) {
+		for (String entry : StringFileReader.readLines(blacklistFile)) {
 			config.addBlacklist(entry);
 		}
 
-		// Try to initialize Database
-		System.out.println("Initialize Database...");
-		try {
-			SSLDatabaseManager.getInstance();
-			SSLDatabaseManager.getInstance().loadLastCrawlingSession();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw ex;
-		}
-
+		System.out.println("");
+		System.out.println(config.toString());
+		System.out.println("Hit y to continue...");
+		if(System.in.read() != 'y')
+			return;
+		
 		System.out.println("Loading last SSL-Hosts...");
+		SSLDatabaseManager.getInstance();
 		SSLDatabaseManager.getInstance().loadLastHostSslInfos();
 		
 		// Hint: Exit here to test database schema only
@@ -118,10 +177,23 @@ public class HttpsCheckerController {
 		System.out.println("Loading queue with work...");
 		Map<String, HostInfo> hosts;
 		try {
-			hosts = SSLDatabaseManager.getInstance().getAllHosts();
+			if(config.getHostFile() != null && config.getHostFile().length() > 0) {
+				hosts = new HashMap<String, HostInfo>(); 
+			    List<String> hostsFromFile = StringFileReader.readLines(config.getHostFile());
+			    HostInfo dummy = new HostInfo();
+			    dummy.setSslProtocol("SSL");
+			    for(String h : hostsFromFile) {
+			    	hosts.put(h,  dummy);
+			    }
+			} else {
+				System.out.println("Load hosts from Database...");
+				SSLDatabaseManager.getInstance().loadLastCrawlingSession();
+				hosts = SSLDatabaseManager.getInstance().getAllHosts();
+			}
 		} catch (Exception e) {
 			System.err
 					.println("Unable to fetch hosts. Did you run the HttpCrawler before?");
+			showHelp();
 			return;
 		}
 		Thread producer = new Thread(new HttpsCheckerProducer(config,
@@ -130,7 +202,7 @@ public class HttpsCheckerController {
 
 		System.out.println("Starting Workers...");
 		stats = new HttpsCheckerStatistics();
-		Thread dbWorker = new Thread(new HttpsDbWorker(resultQueue),
+		Thread dbWorker = new Thread(new HttpsDbWorker(config, resultQueue),
 				"HttpsDbWorker");
 		dbWorker.start();
 
@@ -144,10 +216,11 @@ public class HttpsCheckerController {
 					stats.incrementSuccesses();
 				}
 			});
-			checker.setFailureCallback(new LongCallback() {
+			checker.setFailureCallback(new StringCallback() {
 				@Override
-				public void Call(Long value) {
+				public void Call(String value) {
 					stats.incrementFailures();
+					stats.logFailure(value);
 				}
 			});
 			checker.setRoundTimeCallback(new LongCallback() {
@@ -185,18 +258,19 @@ public class HttpsCheckerController {
 		}
 		
 		/**
-		 * Now wait max. 5min for all running worker threads to finish.
+		 * Now wait max. hostTimeout for all running worker threads to finish.
 		 */
+		
 		Long abortTime = (new Date()).getTime();
-		Long timeout = 5 * 60 * 1000L;
-		Long shortTimeout = 60 * 1000L;
-		System.out.println("Controller: waiting max. 5 minutes for all workers to finish");
+		Long shortTimeout = config.getHostTimeout() / 10;
+		Long seconds = config.getHostTimeout() / 1000;
+		System.out.println("Controller: waiting max. " + seconds + " seconds for all workers to finish");
 		// Now wait for all Workers to finish
 		for (Thread t : workers) {
 			// wait max. 5min for the worker threads to stop
-			System.out.println("Controller: waiting max. 5 minutes for thread " + t.getId() + " to stop...");
-			if((new Date()).getTime() - abortTime < timeout) {
-				t.join(timeout);
+			System.out.println("Controller: waiting max. " + seconds + " for thread " + t.getId() + " to stop...");
+			if((new Date()).getTime() - abortTime < config.getHostTimeout()) {
+				t.join(config.getHostTimeout());
 			} 
 			
 			//If thread did not stop yet, interrupt it
@@ -210,8 +284,8 @@ public class HttpsCheckerController {
 		resultQueue.put(new HostSslInfo());
 
 		System.out.println("Controller: waiting for DbWorker to stop...");
-		if((new Date()).getTime() - abortTime < timeout) {
-			dbWorker.join(timeout);
+		if((new Date()).getTime() - abortTime < config.getHostTimeout()) {
+			dbWorker.join(config.getHostTimeout());
 		} else {
 			dbWorker.join(shortTimeout);
 		}

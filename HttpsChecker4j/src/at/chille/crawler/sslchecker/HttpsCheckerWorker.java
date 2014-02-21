@@ -2,6 +2,7 @@ package at.chille.crawler.sslchecker;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 
@@ -19,14 +20,14 @@ public class HttpsCheckerWorker implements Runnable {
 	protected HttpsCheckerConfig config;
 
 	protected LongCallback successCallback;
-	protected LongCallback failureCallback;
+	protected StringCallback failureCallback;
 	protected LongCallback roundTimeCallback;
 	
 	public void setSuccessCallback(LongCallback c) {
 		this.successCallback = c;
 	}
 	
-	public void setFailureCallback(LongCallback c) {
+	public void setFailureCallback(StringCallback c) {
 		this.failureCallback = c;
 	}
 	
@@ -51,12 +52,13 @@ public class HttpsCheckerWorker implements Runnable {
 		return false;
 	}
 
+	enum TLS_VERSION { TLSv2, TLSv1, SSLv3, SSLv2 };
 	@Override
 	public void run() {
 
 		int hostCount = 0;
+		String host = "";
 		Long startTime = (new Date()).getTime();
-		
 		while (true) {
 			try {
 				startTime = (new Date()).getTime();
@@ -64,11 +66,11 @@ public class HttpsCheckerWorker implements Runnable {
 					System.err.println("Worker " + getUniqueId()
 							+ " aborted.");
 					if(failureCallback != null)
-						failureCallback.Call(0L);
+						failureCallback.Call("Worker " + getUniqueId()
+								+ " aborted.");
 					return;
 				}
-				hostCount++;
-				String host = hostQueue.take();
+				host = hostQueue.take();
 				if (host.equalsIgnoreCase("stop")) {
 					System.out.println("Worker " + getUniqueId()
 							+ " finished.");
@@ -76,39 +78,33 @@ public class HttpsCheckerWorker implements Runnable {
 				}
 				System.out.println("Worker " + getUniqueId()
 						+ " processing host " + host);
-				String xmlFileName = config.getTempFolder() + "sslscan_"
-						+ getUniqueId() + "_" + String.valueOf(hostCount)
-						+ ".xml";
-
-				File file = new File(xmlFileName);
-				if (file.exists() && !file.delete()) {
-					System.err.println("Worker " + getUniqueId() + ": unable to delete old file "
-							+ file.getCanonicalPath());
-					return;
-				}
-
-				ExecConfig sslConfig = new ExecConfig();
-				sslConfig.setExecutable("sslscan");
-				sslConfig.setParam("--timesleep=" + config.getTimesleep());
-				sslConfig.setParam("--xml=" + xmlFileName);
-				sslConfig.setParam(host);
-				ShellExecutor checker = new ShellExecutor(sslConfig);
-				checker.execute();
-
-				if (!file.exists()) {
-					System.err.println("Worker " + getUniqueId()
-							+ ": sslscan failed. No file produced.");
+				
+				HostSslInfo sslData = new HostSslInfo();
+				sslData.setHostSslName(host);
+				sslData.setTimestamp(startTime);
+				
+				if(config.isScanTLSv1() && 
+						!doScan(host, hostCount++, TLS_VERSION.TLSv1, sslData)) {
 					if(failureCallback != null)
-						failureCallback.Call(0L);
+						failureCallback.Call(host + " " + "TLSv1");
+					continue;
+					
+				}
+				
+				if(config.isScanSSLv3() &&
+						!doScan(host, hostCount++, TLS_VERSION.SSLv3, sslData)) {
+					if(failureCallback != null)
+						failureCallback.Call(host + " " + "SSLv3");
 					continue;
 				}
-
-				// Now parse the resulting XML file
-				FileInputStream stream = new FileInputStream(file);
-				SSLXmlParser parser = new SSLXmlParser();
-				HostSslInfo sslData = parser.parse(stream);
-				sslData.setHostSslName(host);
-				sslData.setTimestamp((new Date()).getTime());
+				
+				if(config.isScanSSLv2() && 
+						!doScan(host, hostCount++, TLS_VERSION.SSLv2, sslData)) {
+					if(failureCallback != null)
+						failureCallback.Call(host + " " + "SSLv2");
+					continue;
+				}
+				
 				resultQueue.put(sslData);
 				
 				if(successCallback != null)
@@ -124,8 +120,62 @@ public class HttpsCheckerWorker implements Runnable {
 						+ " caused exception:");
 				e.printStackTrace();
 				if(failureCallback != null)
-					failureCallback.Call(0L);
+					failureCallback.Call("Worker " + getUniqueId()
+							+ " caused exception:" + e.getMessage());
 			}
+		}
+	}
+	
+	private boolean doScan(String host, int hostCount, TLS_VERSION version, HostSslInfo result)
+	{
+		try
+		{
+		String xmlFileName = config.getTempFolder() + "sslscan_"
+				+ getUniqueId() + "_" + String.valueOf(hostCount)
+				+ ".xml";
+
+		File file = new File(xmlFileName);
+		if (file.exists() && !file.delete()) {
+			throw new Exception("Worker " + getUniqueId() + ": unable to delete old file "
+					+ file.getCanonicalPath());
+		}
+		
+		ExecConfig sslConfig = new ExecConfig();
+		sslConfig.setExecutable("sslscan");
+		sslConfig.setParam("--timesleep=" + config.getTimesleep());
+		sslConfig.setParam("--xml=" + xmlFileName);
+		if (version == TLS_VERSION.TLSv1) {
+			//do nothing
+		} else if (version == TLS_VERSION.SSLv3) {
+			sslConfig.setParam("--ssl3");
+		} else if (version == TLS_VERSION.SSLv2) {
+			sslConfig.setParam("--ssl2");
+		} else {
+			throw new Exception("TLS version not supported: " + version.toString());
+		}
+		sslConfig.setParam(host);
+		ShellExecutor checker = new ShellExecutor(sslConfig);
+		checker.execute();
+
+		if (!file.exists()) {
+			System.err.println("Worker " + getUniqueId()
+					+ ": sslscan failed. No file produced.");
+			return false;
+		}
+
+		// Now parse the resulting XML file
+		FileInputStream stream = new FileInputStream(file);
+		SSLXmlParser parser = new SSLXmlParser();
+		HostSslInfo sslData = parser.parse(stream);
+		result.addAccepted(sslData.getAccepted());
+		result.addRejected(sslData.getRejected());
+		result.addFailed(sslData.getFailed());
+		result.addPreferred(sslData.getPreferred());
+		return true;
+		} catch(Exception e) {
+			System.err.println("Worker " + getUniqueId()
+					+ " caused exception: " + e.getMessage());
+			return false;
 		}
 	}
 }
