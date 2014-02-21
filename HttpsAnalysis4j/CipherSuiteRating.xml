@@ -1,16 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Rating>
     <Handshakes>
-      <Handshake name="RSA" rating="0"/>
+      <Handshake name="NULL" rating="-100">No encryption during handshake is the worst option</Handshake>
+      <Handshake name="ADH" rating="-100"></Handshake>
+      <Handshake name="AECDH" rating="-100"></Handshake>
+      <Handshake name="DHE-RSA" rating="-100"></Handshake>
+      <Handshake name="DHE-DSS" rating="-100"></Handshake>
+      <Handshake name="EXP" rating="-100"> </Handshake>
+      <Handshake name="EXP-ADH" rating="-100"> </Handshake>
+      <Handshake name="EXP-EDH-DSS" rating="-100"> </Handshake>
+      <Handshake name="EXP-EDH-RSA" rating="-100"> </Handshake>
+      <Handshake name="EDH-DSS" rating="-100"> </Handshake>
+      <Handshake name="EDH-RSA" rating="-100"> </Handshake>
+      <Handshake name="ECDH-RSA" rating="-100"> </Handshake>
+      <Handshake name="ECDH-ECDSA" rating="-100"> </Handshake>
+      <Handshake name="ECDHE-RSA" rating="-100"> </Handshake>
+      <Handshake name="ECDHE-ECDSA" rating="-100"> </Handshake>
+      <Handshake name="PSK" rating="-100"> </Handshake>
+      <Handshake name="RSA" rating="-100"> </Handshake>
+      <Handshake name="SRP" rating="-100"> </Handshake>
+      <Handshake name="SRP-DSS" rating="-100"> </Handshake>
+      <Handshake name="SRP-RSA" rating="-100"> </Handshake>
     </Handshakes>
+    
     <BulkCiphers>
-      <BulkCipher name="Caesar" rating="-10"/>
-      <BulkCipher name="AES128" rating="0">AES is a nice cipher</BulkCipher>
+      <BulkCipher name="NULL" rating="-10">No encryption is the worst option</BulkCipher>
+      <BulkCipher name="3DES-EDE-CBC" rating="-100"></BulkCipher>
+      <BulkCipher name="AES128" rating="0">AES with 128bits is considered as the standard</BulkCipher>
+      <BulkCipher name="AES128-CBC" rating="0"></BulkCipher>
+      <BulkCipher name="AES-128-CBC" rating="-100"></BulkCipher>
+      <BulkCipher name="AES128-GCM" rating="-100"></BulkCipher>
+      <BulkCipher name="AES256" rating="-100"></BulkCipher>
+      <BulkCipher name="AES256-CBC" rating="-100"></BulkCipher>
+      <BulkCipher name="AES-256-CBC" rating="-100"></BulkCipher>
+      <BulkCipher name="AES256-GCM" rating="-100"></BulkCipher>
+      <BulkCipher name="CAMELLIA128" rating="0">Camellia is maybe better than AES but not so extensively investigated, therefore rated as equal as AES</BulkCipher>
+      <BulkCipher name="CAMELLIA256" rating="2"></BulkCipher>
       <BulkCipher name="DES" rating="-5">DES is completely deprecated. See this.awesome.webpage.com</BulkCipher>
-      <BulkCipher name="RC5" rating="-4"><![CDATA[RC5 has known weaknesses in its initial phase.
-      some more text with <special> chars & more...]]></BulkCipher>
+      <BulkCipher name="DES-CBC" rating="-100"></BulkCipher>
+      <BulkCipher name="DES-CBC3" rating="-100"></BulkCipher>
+      <BulkCipher name="RC2-CBC" rating="-100"></BulkCipher>
+      <BulkCipher name="RC4" rating="-100"></BulkCipher>
+      <BulkCipher name="RC5" rating="-4"><![CDATA[RC5 has known weaknesses in its initial phase. some more text with <special> chars & more..]]></BulkCipher>
+      <BulkCipher name="SEED" rating="-100"></BulkCipher>
     </BulkCiphers>
+    
+    <BitsOfBulkCiphers>
+      <BitsOfBulkCipher name="0" rating="-100">blaa</BitsOfBulkCipher>
+      <BitsOfBulkCipher name="40" rating="-10">blaa</BitsOfBulkCipher>
+      <BitsOfBulkCipher name="56" rating="-5">blaa</BitsOfBulkCipher>
+      <BitsOfBulkCipher name="128" rating="0">blaa</BitsOfBulkCipher>
+      <BitsOfBulkCipher name="168" rating="2">blaa</BitsOfBulkCipher>
+      <BitsOfBulkCipher name="256" rating="5">blaa</BitsOfBulkCipher>
+    </BitsOfBulkCiphers>
+      
     <Hashes>
-      <Hash name="SHA1" rating="0"/>
+      <Hash name="NULL" rating="-100">No signature is the worst option</Hash>
+      <Hash name="MD5" rating="-10"></Hash>
+      <Hash name="SHA" rating="0"></Hash>
+      <Hash name="SHA256" rating="-100"></Hash>
+      <Hash name="SHA384" rating="-100"></Hash>
     </Hashes>
+    
+    <TlsVersions>
+      <TlsVersion name="SSLv3" rating="-5">bla</TlsVersion>
+      <TlsVersion name="TLSv1" rating="0">bla</TlsVersion>
+    </TlsVersions>
 </Rating>

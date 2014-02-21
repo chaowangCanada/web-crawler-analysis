@@ -39,7 +39,8 @@ public class HostSslInfo {
 	/**
 	 * CipherSuites that are supported by this host
 	 */
-	@ManyToMany(fetch = FetchType.LAZY)
+//	@ManyToMany(fetch = FetchType.LAZY)
+	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "CIPHER_ACC_ID")
 	private Set<CipherSuite> accepted;
 
@@ -61,7 +62,8 @@ public class HostSslInfo {
 	 * CipherSuites that are preferred by this host if more than one CipherSuite
 	 * is offered by the client
 	 */
-	@ManyToMany(fetch = FetchType.LAZY)
+//	@ManyToMany(fetch = FetchType.LAZY)
+	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "CIPHER_PREF_ID")
 	private Set<CipherSuite> preferred;
 
