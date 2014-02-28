@@ -6,8 +6,19 @@ import java.util.concurrent.BlockingQueue;
 import at.chille.crawler.database.model.sslchecker.CipherSuite;
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 
+/**
+ * worker-class for storing scan-results in the database
+ * @author sammey
+ *
+ */
 public class HttpsDbWorker implements Runnable {
+	/**
+	 * The queue containing scan-results that shall be stored in the database
+	 */
 	protected BlockingQueue<HostSslInfo> resultQueue;
+	/**
+	 * The configuration
+	 */
 	protected HttpsCheckerConfig config;
 	
 	public HttpsDbWorker(HttpsCheckerConfig config,
@@ -16,6 +27,13 @@ public class HttpsDbWorker implements Runnable {
 		this.resultQueue = resultQueue;
 	}
 
+	/**
+	 * This method takes one result from the resultQueue and stores it in the database.
+	 * Ciphersuites from one result are merged with the ciphersuites that are already
+	 * in the database. This is done via saveCipherSuite. 
+	 * This process is repeated until an empty HostSslInfo object is read from the queue. 
+	 * See HttpsCheckerController.
+	 */
 	@Override
 	public void run() {
 		try {
@@ -34,9 +52,14 @@ public class HttpsDbWorker implements Runnable {
 				}
 				System.out.println("DbWorker consuming " + result.getHostSslName());
 				
-				//Now store all ciphersuites in the db before storing the HostSslInfo result object.
-				//This is required because HostSslInfo does not specify CascadeType.ALL which would
-				//automatically store all ciphersuites. See HostSslInfo for details.
+				/**
+				 * Now store all ciphersuites in the db before storing the HostSslInfo result object.
+				 *
+				 * This is required because HostSslInfo does not specify CascadeType.ALL which would
+				 * automatically store all ciphersuites. See HostSslInfo for details.
+				 * saveCipherSuite merges the ciphersuite from the scan-result with those
+				 * already existing in the database.
+				 */
 				HashSet<CipherSuite> accepted = new HashSet<CipherSuite>();
 				HashSet<CipherSuite> rejected = new HashSet<CipherSuite>();
 				HashSet<CipherSuite> failed = new HashSet<CipherSuite>();
@@ -64,6 +87,7 @@ public class HttpsDbWorker implements Runnable {
 				result.setFailed(failed);
 				result.setPreferred(preferred);
 				
+				//Now store the HostSslInfo into the db
 				SSLDatabaseManager.getInstance().getHostSSLInfoRepository().save(result);
 			}
 

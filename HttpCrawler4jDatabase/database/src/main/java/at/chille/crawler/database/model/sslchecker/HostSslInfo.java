@@ -12,8 +12,9 @@ import javax.persistence.*;
 import javax.validation.constraints.Size;
 
 @Entity
+//@FetchProfile(name = "HostSslInfo-eager", fetchOverrides = {
+//		   @FetchProfile.FetchOverride(entity = HostSslInfo.class, association = "CIPHER_ACC_ID", mode = FetchMode.JOIN)})
 public class HostSslInfo {
-
 	@Id
 	@GeneratedValue
 	private Long id;
@@ -39,8 +40,8 @@ public class HostSslInfo {
 	/**
 	 * CipherSuites that are supported by this host
 	 */
-//	@ManyToMany(fetch = FetchType.LAZY)
-	@ManyToMany(fetch = FetchType.EAGER)
+	@ManyToMany(fetch = FetchType.LAZY)
+//	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "CIPHER_ACC_ID")
 	private Set<CipherSuite> accepted;
 
@@ -62,8 +63,8 @@ public class HostSslInfo {
 	 * CipherSuites that are preferred by this host if more than one CipherSuite
 	 * is offered by the client
 	 */
-//	@ManyToMany(fetch = FetchType.LAZY)
-	@ManyToMany(fetch = FetchType.EAGER)
+	@ManyToMany(fetch = FetchType.LAZY)
+//	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "CIPHER_PREF_ID")
 	private Set<CipherSuite> preferred;
 
@@ -97,8 +98,12 @@ public class HostSslInfo {
 		this.accepted = accepted;
 	}
 
-	public void setAccepted(CipherSuite accepted) {
+	public void addAccepted(CipherSuite accepted) {
 		this.accepted.add(accepted);
+	}
+	
+	public void addAccepted(Collection<CipherSuite> accepted) {
+		this.accepted.addAll(accepted);
 	}
 
 	public Set<CipherSuite> getRejected() {
@@ -109,9 +114,14 @@ public class HostSslInfo {
 		this.rejected = rejected;
 	}
 
-	public void setRejected(CipherSuite rejected) {
+	public void addRejected(CipherSuite rejected) {
 		this.rejected.add(rejected);
 	}
+	
+	public void addRejected(Collection<CipherSuite> rejected) {
+		this.rejected.addAll(rejected);
+	}
+
 
 	public Set<CipherSuite> getFailed() {
 		return failed;
@@ -121,8 +131,12 @@ public class HostSslInfo {
 		this.failed = failed;
 	}
 
-	public void setFailed(CipherSuite failed) {
+	public void addFailed(CipherSuite failed) {
 		this.failed.add(failed);
+	}
+	
+	public void addFailed(Collection<CipherSuite> failed) {
+		this.failed.addAll(failed);
 	}
 
 	public Set<CipherSuite> getPreferred() {
@@ -133,8 +147,12 @@ public class HostSslInfo {
 		this.preferred = preferred;
 	}
 
-	public void setPreferred(CipherSuite preferred) {
+	public void addPreferred(CipherSuite preferred) {
 		this.preferred.add(preferred);
+	}
+	
+	public void addPreferred(Collection<CipherSuite> preferred) {
+		this.preferred.addAll(preferred);
 	}
 
 	public Long getTimestamp() {

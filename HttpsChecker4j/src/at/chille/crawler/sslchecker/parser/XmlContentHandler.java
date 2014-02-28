@@ -7,6 +7,11 @@ import org.xml.sax.helpers.DefaultHandler;
 import at.chille.crawler.database.model.sslchecker.CipherSuite;
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 
+/**
+ * Content-Handler for SSLXmlParser
+ * @author sammey
+ *
+ */
 public class XmlContentHandler extends DefaultHandler {
 	
 	private HostSslInfo parseResult;

@@ -53,6 +53,11 @@ public class HttpsCheckerConfig {
 	 */
 	private boolean omitFailedCipherSuites = false;
 	
+	/**
+	 * Specify if given TLS-version shall be scanned
+	 */
+	private boolean scanTLSv1_2 = true;
+	private boolean scanTLSv1_1 = true;
 	private boolean scanTLSv1 = true;
 	private boolean scanSSLv3 = false;
 	private boolean scanSSLv2 = false;
@@ -74,7 +79,9 @@ public class HttpsCheckerConfig {
 		result += "\n  niceWait     = " + timesleep + "ms";
 		result += "\n  revisitDelay = " + revisitDelay + "ms";
 		result += "\n  hostTimeout  = " + hostTimeout + "ms";
-		result += "\n  TLSv1        = " + scanTLSv1;
+		result += "\n  TLSv1.2      = " + scanTLSv1_2;
+		result += "\n  TLSv1.1      = " + scanTLSv1_1;
+		result += "\n  TLSv1.0      = " + scanTLSv1;
 		result += "\n  SSLv3        = " + scanSSLv3;
 		result += "\n  SSLv2        = " + scanSSLv2;
 		result += "\n  omitRejected = " + omitRejectedCipherSuites;
@@ -83,6 +90,7 @@ public class HttpsCheckerConfig {
 		
 		return result;
 	}
+	
 	public HttpsCheckerConfig(int numWorkers, String tempFolder, int timesleep)
 	{
 		this.setNumWorkers(numWorkers);
@@ -102,9 +110,11 @@ public class HttpsCheckerConfig {
 	public String getHostFile() {
 		return hostFile;
 	}
+	
 	public void setHostFile(String hostFile) {
 		this.hostFile = hostFile;
 	}
+	
 	public String getTempFolder() {
 		return tempFolder;
 	}
@@ -153,6 +163,22 @@ public class HttpsCheckerConfig {
 		this.omitFailedCipherSuites = omitFailedCipherSuites;
 	}
 
+	public boolean isScanTLSv1_2() {
+		return scanTLSv1_2;
+	}
+	
+	public void setScanTLSv1_2(boolean scanTLSv1_2) {
+		this.scanTLSv1_2 = scanTLSv1_2;
+	}
+	
+	public boolean isScanTLSv1_1() {
+		return scanTLSv1_1;
+	}
+	
+	public void setScanTLSv1_1(boolean scanTLSv1_1) {
+		this.scanTLSv1_1 = scanTLSv1_1;
+	}
+	
 	public boolean isScanTLSv1() {
 		return scanTLSv1;
 	}
@@ -187,6 +213,12 @@ public class HttpsCheckerConfig {
 		blacklist.add(entry);
 	}
 	
+	/**
+	 * Currently not used.
+	 * @param filename to store xml-results
+	 * @param host to scan
+	 * @return a ShellExecutor instance for ssl-scanning
+	 */
 	public ShellExecutor getSslChecker(String filename, String host)
 	{
 		ExecConfig config = new ExecConfig();
@@ -197,6 +229,11 @@ public class HttpsCheckerConfig {
 		return new ShellExecutor(config);
 	}
 	
+	/**
+	 * Check if the correct version of sslscan is installed.
+	 * It must be self-compiled to support --timesleep option.
+	 * @return true on success
+	 */
 	public boolean testSslChecker()
 	{
 		ExecConfig config = new ExecConfig();

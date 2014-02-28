@@ -6,14 +6,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 import org.junit.Test;
 
+import at.chille.crawler.database.model.HostInfo;
+import at.chille.crawler.database.model.sslchecker.CipherSuite;
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 import at.chille.crawler.sslchecker.ExecConfig;
 import at.chille.crawler.sslchecker.HttpsCheckerConfig;
+import at.chille.crawler.sslchecker.HttpsCheckerProducer;
 import at.chille.crawler.sslchecker.HttpsCheckerWorker;
 import at.chille.crawler.sslchecker.HttpsDbWorker;
 import at.chille.crawler.sslchecker.SSLDatabaseManager;
@@ -125,8 +131,8 @@ public class SSLCheckerTest {
 	public void TestSSLScanWorker()
 	{
 		HttpsCheckerConfig config = new HttpsCheckerConfig(1, "sslscan", 0);
-		config.setOmitRejectedCipherSuites(true);
-		config.setOmitFailedCipherSuites(true);
+		config.setOmitRejectedCipherSuites(false);
+		config.setOmitFailedCipherSuites(false);
 		
 		File file = new File(xmlFile);
 		File path = new File(xmlPath);
@@ -141,28 +147,82 @@ public class SSLCheckerTest {
 		ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(2);
 		ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(6);
 		
+		config.setScanTLSv1_2(true);
+		config.setScanTLSv1_1(false);
 		config.setScanTLSv1(false);
+		config.setScanSSLv3(false);
+		config.setScanSSLv2(false);
+		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
+		assertTrue(resultQueue.size() == 1);
+		assertTrue(checkHostSslInfoResult(resultQueue, "TLSv1_2"));
+		System.out.println("Worker Test TLSv1_2 succeeded.");
+		System.out.println("Now write result into DB");
+		resultQueue.add(new HostSslInfo());	//Terminator object
+		(new HttpsDbWorker(config, resultQueue)).run();
+		
+		config.setScanTLSv1_2(false);
+		config.setScanTLSv1_1(true);
+		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
+		assertTrue(resultQueue.size() == 1);
+		assertTrue(checkHostSslInfoResult(resultQueue, "TLSv1_1"));
+		System.out.println("Worker Test TLSv1_1 succeeded.");
+		System.out.println("Now write result into DB");
+		resultQueue.add(new HostSslInfo());	//Terminator object
+		(new HttpsDbWorker(config, resultQueue)).run();
+		
+		config.setScanTLSv1_1(false);
+		config.setScanTLSv1(true);
+		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
+		assertTrue(resultQueue.size() == 1);
+		assertTrue(checkHostSslInfoResult(resultQueue, "TLSv1"));
+		System.out.println("Worker Test TLSv1_0 succeeded.");
+		System.out.println("Now write result into DB");
+		resultQueue.add(new HostSslInfo());	//Terminator object
+		(new HttpsDbWorker(config, resultQueue)).run();
+		
+		config.setScanTLSv1(false);
+		config.setScanSSLv3(true);
+		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
+		assertTrue(resultQueue.size() == 1);
+		assertTrue(checkHostSslInfoResult(resultQueue, "SSLv3"));
+		System.out.println("Worker Test SSLv3 succeeded.");
+		System.out.println("Now write result into DB");
+		resultQueue.add(new HostSslInfo());	//Terminator object
+		(new HttpsDbWorker(config, resultQueue)).run();
+		
 		config.setScanSSLv3(false);
 		config.setScanSSLv2(true);
 		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
 		assertTrue(resultQueue.size() == 1);
+		assertTrue(checkHostSslInfoResult(resultQueue, "SSLv2"));
 		System.out.println("Worker Test SSLv2 succeeded.");
-		
-		config.setScanSSLv3(true);
-		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
-		assertTrue(resultQueue.size() == 1);
-		System.out.println("Worker Test SSLv2 and SSLv3 succeeded.");
-		
-		config.setScanTLSv1(true);
-		TestSslScanWorkerSingle(config, hostQueue, resultQueue);
-		assertTrue(resultQueue.size() == 1);
-		
-		System.out.println("Worker Test TLSv1, SSLv3 and SSLv2 succeeded.");
 		System.out.println("Now write result into DB");
-		
 		resultQueue.add(new HostSslInfo());	//Terminator object
-		HttpsDbWorker worker = new HttpsDbWorker(config, resultQueue);
-		worker.run();
+		(new HttpsDbWorker(config, resultQueue)).run();
+	}
+	
+	private boolean checkHostSslInfoResult(Queue<HostSslInfo> resultQueue, String tlsVersion) {
+		HostSslInfo currentInfo = resultQueue.peek();
+		if(currentInfo == null)
+			return false;
+		
+		for(CipherSuite cs : currentInfo.getAccepted()) {
+			if(!cs.getTlsVersion().equalsIgnoreCase(tlsVersion))
+				return false;
+		}
+		for(CipherSuite cs : currentInfo.getRejected()) {
+			if(!cs.getTlsVersion().equalsIgnoreCase(tlsVersion))
+				return false;
+		}
+		for(CipherSuite cs : currentInfo.getFailed()) {
+			if(!cs.getTlsVersion().equalsIgnoreCase(tlsVersion))
+				return false;
+		}
+		for(CipherSuite cs : currentInfo.getPreferred()) {
+			if(!cs.getTlsVersion().equalsIgnoreCase(tlsVersion))
+				return false;
+		}
+		return true;
 	}
 	
 	public void TestSslScanWorkerSingle(HttpsCheckerConfig config, 
@@ -180,5 +240,54 @@ public class SSLCheckerTest {
 			e.printStackTrace();
 			assertTrue(false);
 		}
+	}
+	
+	@Test
+	public void TestBlacklist()
+	{
+		
+		System.out.println("Loading last SSL-Hosts...");
+		SSLDatabaseManager.getInstance();
+		SSLDatabaseManager.getInstance().loadLastHostSslInfos();
+		
+		String[] hosts = {"google.at", "googlebat", "www.google.at", "ads.google.at", "www.google.com", "google-ads.com" };
+		
+		//filter all
+		String[] bl1 = {".*"};
+		assertTrue(applyBlacklist(hosts, bl1) == 0);
+		
+		//filter nothing
+		assertTrue(applyBlacklist(hosts, new String[]{}) == hosts.length);
+		
+		//Only filter google.at correctly
+		String[] bl2 = {"google", "at", "google\\.at"};
+		assertTrue(applyBlacklist(hosts, bl2) == hosts.length-1);
+		
+		//Filter *google.at
+		String[] bl3 = {".*google\\.at"};
+		assertTrue(applyBlacklist(hosts, bl3) == hosts.length-3);
+		
+		//Filter *googl*
+		String[] bl4 = {".*google.*"};
+		assertTrue(applyBlacklist(hosts, bl4) == 0);
+	}
+	
+	private int applyBlacklist(String[] hostList, String[] blacklist) {
+		
+		Map<String, HostInfo> hosts = new HashMap<String, HostInfo>();
+		HostInfo dummy = new HostInfo();
+	    dummy.setSslProtocol("SSL");
+	    for(String h : hostList) {
+	    	hosts.put(h, dummy);
+	    }
+		
+	    HttpsCheckerConfig config = new HttpsCheckerConfig(0,  "sslscan", 0);
+	    for(String b : blacklist) {
+	    	config.addBlacklist(b);
+	    }
+	    
+		ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(hostList.length);
+		(new HttpsCheckerProducer(config, hostQueue, hosts)).run();
+		return hostQueue.size();
 	}
 }

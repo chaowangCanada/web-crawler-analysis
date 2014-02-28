@@ -1,21 +1,43 @@
 package at.chille.crawler.sslchecker;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 
-import javax.security.auth.callback.TextOutputCallback;
-
+/**
+ * Class for gathering statistics
+ * @author sammey
+ *
+ */
 public class HttpsCheckerStatistics {
+	/**
+	 * Number of successful scanned ssl-hosts
+	 */
 	private int successes;
+	/**
+	 * Number of failed host scannings
+	 */
 	private int failures;
+	/**
+	 * List of all successful host-scanning speeds in milliseconds.
+	 * Used for averaging
+	 */
 	private ArrayList<Long> speed;
+	/**
+	 * Start-time, used for calculating pages per minute
+	 */
 	private Long startTime;
+	/**
+	 * Logfile of failures
+	 */
 	private String logfilename = "failures.txt";
+	/**
+	 * Stream of logfile
+	 */
 	private OutputStream logfileStream;
+	
 	public HttpsCheckerStatistics() throws IOException
 	{
 		successes = 0;
@@ -24,7 +46,7 @@ public class HttpsCheckerStatistics {
 		startTime = (new Date()).getTime();
 		logfileStream = new FileOutputStream(logfilename, true);
 		String separator = "================================================================================\n";
-		String header = "Log started: " + (new Date()).toString();
+		String header = "Log started: " + (new Date()).toString() + "\n";
 		logfileStream.write(separator.getBytes());
 		logfileStream.write(header.getBytes());
 	}
@@ -35,16 +57,38 @@ public class HttpsCheckerStatistics {
 		super.finalize();
 	}
 	
+	/**
+	 * called upon successful host-scanning
+	 */
 	public synchronized void incrementSuccesses()
 	{
 		successes++;
 	}
 	
+	/**
+	 * called upon scanning-error
+	 */
 	public synchronized void incrementFailures()
 	{
 		failures++;
 	}
 	
+	/**
+	 * called upon scanning-error
+	 * @param value contains an error-message for the logfile
+	 */
+	public void logFailure(String value) {
+		try {
+			value = value.trim() + "\n";
+			logfileStream.write(value.getBytes());
+		} catch (IOException e) {
+		}
+	}
+	
+	/**
+	 * called upon successful scanning
+	 * @param speed in milliseconds of the scanning process
+	 */
 	public synchronized void addPageScanSpeed(Long speed)
 	{
 		this.speed.add(speed);
@@ -109,13 +153,5 @@ public class HttpsCheckerStatistics {
 		Long upTime = (new Date()).getTime() - startTime;
 		float minutes = upTime / (60*1000.0f);
 		return this.speed.size() / minutes;
-	}
-
-	public void logFailure(String value) {
-		try {
-			value = value.trim() + "\n";
-			logfileStream.write(value.getBytes());
-		} catch (IOException e) {
-		}
 	}
 }

@@ -8,6 +8,11 @@ import javax.xml.parsers.SAXParserFactory;
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 import at.chille.crawler.sslchecker.parser.XmlContentHandler;
 
+/**
+ * XML-Parser class for sslscan result files
+ * @author sammey
+ *
+ */
 public class SSLXmlParser {
 	
 	public HostSslInfo parse(InputStream stream)

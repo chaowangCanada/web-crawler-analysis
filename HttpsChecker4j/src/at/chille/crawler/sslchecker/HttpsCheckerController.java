@@ -26,21 +26,17 @@ public class HttpsCheckerController {
 	public HttpsCheckerController() {
 	}
 
-	protected static final int queueSize = 100;
-
 	/**
 	 * The worker queue containing all SSL-hosts that shall be scanned by
 	 * HttpsCheckerWorkers
 	 */
-	protected static ArrayBlockingQueue<String> hostQueue = new ArrayBlockingQueue<String>(
-			queueSize);
+	protected static ArrayBlockingQueue<String> hostQueue;
 
 	/**
 	 * The result queue containing the results from the HttpsCheckerWorkers. It
 	 * is processed by HttpsDbWorker.
 	 */
-	protected static ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(
-			queueSize);
+	protected static ArrayBlockingQueue<HostSslInfo> resultQueue = new ArrayBlockingQueue<HostSslInfo>(100);
 
 	/**
 	 * The default configuration
@@ -65,8 +61,10 @@ public class HttpsCheckerController {
 		System.out.println("workers=<integer>       number of concurrent scanning threads (5)");
 		System.out.println("niceWait=<millisec>     time to wait between each connection attempt to one host (1000)");
 		System.out.println("revisitDelay=<millisec> timespan after which another scan to the same host is allowed (0)");
-		System.out.println("tlsv1=<true|false>      scan TLSv1 ciphersuites (true)");
-		System.out.println("sslv3=<true|false>      scan SSLv3 ciphersuites (true)");
+		System.out.println("tlsv1_2=<true|false>    scan TLSv1.2 ciphersuites (true)");
+		System.out.println("tlsv1_1=<true|false>    scan TLSv1.1 ciphersuites (true)");
+		System.out.println("tlsv1=<true|false>      scan TLSv1.0 ciphersuites (true)");
+		System.out.println("sslv3=<true|false>      scan SSLv3 ciphersuites (false)");
 		System.out.println("sslv2=<true|false>      scan SSLv2 ciphersuites (false)");
 		System.out.println("omitRejected            don't store rejected ciphersuites in database");
 		System.out.println("omitFailed              don't store failed ciphersuites in database");
@@ -82,8 +80,10 @@ public class HttpsCheckerController {
 		config.setNumWorkers(5);
 		config.setTimesleep(1000);
 		config.setRevisitDelay(0L);
+		config.setScanTLSv1_2(true);
+		config.setScanTLSv1_1(true);
 		config.setScanTLSv1(true);
-		config.setScanSSLv3(true);
+		config.setScanSSLv3(false);
 		config.setScanSSLv2(false);
 		config.setOmitRejectedCipherSuites(false);
 		config.setOmitFailedCipherSuites(false);
@@ -109,6 +109,10 @@ public class HttpsCheckerController {
 					config.setTimesleep(Integer.parseInt(a.replace("niceWait=", "")));
 				} else if (a.startsWith("revisitDelay=")) {
 					config.setRevisitDelay(Long.parseLong(a.replace("revisitDelay=",  "")));
+				} else if (a.startsWith("tlsv1_2=")) {
+					config.setScanTLSv1_2(Boolean.parseBoolean(a.replace("tlsv1_2=", "")));
+				} else if (a.startsWith("tlsv1_1=")) {
+					config.setScanTLSv1_1(Boolean.parseBoolean(a.replace("tlsv1_1=", "")));
 				} else if (a.startsWith("tlsv1=")) {
 					config.setScanTLSv1(Boolean.parseBoolean(a.replace("tlsv1=", "")));
 				} else if (a.startsWith("sslv3=")) {
@@ -130,9 +134,15 @@ public class HttpsCheckerController {
 		 * about 220 ciphersuites, round up to 300
 		 * (scantime + timesleep) milliseconds per ciphersuite
 		 * scantime is estimated with 200ms
-		 * multiplied with number (TLSv1, SSLv3 and SSLv2)
+		 * multiplied with number of TLS versions
 		 */
 		int num = 0;
+		if(config.isScanTLSv1_2()) {
+			num++;
+		}
+		if(config.isScanTLSv1_1()) {
+			num++;
+		}
 		if(config.isScanTLSv1()) {
 			num++;
 		}
@@ -167,6 +177,7 @@ public class HttpsCheckerController {
 		if(System.in.read() != 'y')
 			return;
 		
+		hostQueue = new ArrayBlockingQueue<String>(config.getNumWorkers());
 		System.out.println("Loading last SSL-Hosts...");
 		SSLDatabaseManager.getInstance();
 		SSLDatabaseManager.getInstance().loadLastHostSslInfos();
@@ -250,7 +261,7 @@ public class HttpsCheckerController {
 			}
 			if (command.toLowerCase().equals("status")) {
 				try {
-					printStats(hosts.size(), hostQueue.size());
+					printStats(hosts.size(), hostQueue.size(), hostQueue.size() + hostQueue.remainingCapacity());
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
@@ -280,7 +291,7 @@ public class HttpsCheckerController {
 			}	
 		}
 		
-		// signal dbWorker to stop, using an empty SslParseResult
+		// signal dbWorker to stop, using an empty result
 		resultQueue.put(new HostSslInfo());
 
 		System.out.println("Controller: waiting for DbWorker to stop...");
@@ -297,7 +308,7 @@ public class HttpsCheckerController {
 		
 		System.out.println("Controller: all workers stopped");
 
-		printStats(hosts.size(), 0);
+		printStats(hosts.size(), 0, 0);
 		if(stats.getFailures() > 0) {
 			System.err.println("Controller: not all hosts could be scanned. You can try to rerun HttpsChecker4j.");
 		}
@@ -305,7 +316,7 @@ public class HttpsCheckerController {
 		System.out.println("Now closing...");
 	}
 
-	static void printStats(int numTotal, int currentlyPending) {
+	static void printStats(int numTotal, int currentlyPending, int queueSize) {
 		System.err.println("Status Report:");
 		System.err.println("Total no. of hosts: " + numTotal);
 		System.err.println("SSL-Hosts finished: " + stats.getSuccesses());

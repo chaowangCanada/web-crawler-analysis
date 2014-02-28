@@ -17,16 +17,26 @@ import at.chille.crawler.database.repository.sslchecker.*;
 
 /**
  * Database Manager for HttpsChecker4j
- * 
- * @author chille
+ * @author sammey
  * 
  */
 @Component
 public class SSLDatabaseManager {
 	private static ClassPathXmlApplicationContext context = null;
+	/**
+	 * Singleton instance
+	 */
 	private static SSLDatabaseManager _instance;
+	/**
+	 * last crawling session
+	 */
 	protected CrawlingSession currentCrawlingSession;
 
+	/**
+	 * Map of all previously scanned SSL-hosts. Imported from the db once for speedup.
+	 */
+	protected Map<String, HostSslInfo> lastHostSslInfos;
+	
 	/**
 	 * Singleton accessor
 	 * @return the only SSLDatabaseManager instance
@@ -53,7 +63,11 @@ public class SSLDatabaseManager {
 		}
 	}
 
-	protected Map<String, HostSslInfo> lastHostSslInfos;
+	
+	/**
+	 * Load the last scanned SSL-hosts from the db. This is used to
+	 * speedup further calls to getMostRecentHostSslInfo. 
+	 */
 	public synchronized void loadLastHostSslInfos()
 	{
 		lastHostSslInfos = new HashMap<String, HostSslInfo>();
@@ -76,13 +90,20 @@ public class SSLDatabaseManager {
 		}
 	}
 	
+	/**
+	 * Return the most recent HostSslInfo object from previous scans.
+	 * loadLastHostSslInfos must be called once before.
+	 * @param host to search for
+	 * @return the most recent HostSslInfo object or null
+	 */
 	public synchronized HostSslInfo getMostRecentHostSslInfo(String host) {
 		return lastHostSslInfos.get(host);
 	}
 	
 	/**
 	 * @deprecated
-	 * Return the most recent HostSslInfo object from the db  
+	 * Return the most recent HostSslInfo object from previous scans. 
+	 * Loaded directly from the db.  
 	 * @param host    String of the requested host
 	 * @return the most recent HostSslInfo object or null;
 	 */
