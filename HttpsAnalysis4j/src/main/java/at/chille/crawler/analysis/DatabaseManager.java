@@ -31,6 +31,13 @@ public class DatabaseManager
     }
     return _instance;
   }
+  
+  public static DatabaseManager reinitialize() {
+    // TODO check if this is enough
+    _instance = DatabaseManager.getContext().getBean(DatabaseManager.class);
+    
+    return _instance;
+  }
 
   protected static synchronized ApplicationContext getContext()
   {

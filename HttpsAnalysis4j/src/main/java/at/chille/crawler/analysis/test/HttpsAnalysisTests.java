@@ -5,8 +5,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -23,7 +23,7 @@ public class HttpsAnalysisTests {
 	public void CipherSuiteRatingParserValidTests() {
 		File file = new File(xmlFile);
 		assertTrue("Create a file CipherSuiteRating.xml first!", file.exists());
-		List<SslRating> ratingList = new ArrayList<SslRating>();
+		Map<String, SslRating> ratingList = new HashMap<String, SslRating>();
 		
 		try {
 			FileInputStream streamIn    = new FileInputStream(xmlFile);
@@ -35,38 +35,38 @@ public class HttpsAnalysisTests {
 		  cs.setBits(0);
 		  cs.setCipherSuite("NULL-NULL-NULL");
 		  cs.setTlsVersion("SSLv3");
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(), CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  cs.setCipherSuite("NULL-NULL-MD5");
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(),CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  cs.setBits(128);
 		  cs.setCipherSuite("CAMELLIA128-SHA");
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(),CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  cs.setCipherSuite("ECDHE-ECDSA-AES256-GCM-SHA384");
 		  cs.setBits(256);
 		  cs.setTlsVersion("TLSv1");
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(),CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  cs.setCipherSuite("EXP-EDH-DSS-DES-CBC-SHA");
 		  cs.setBits(40);
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(),CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  cs.setCipherSuite("DES-CBC3-SHA");
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(),CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  cs.setCipherSuite("NULL-SHA");
 		  cs.setBits(0);
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(),CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  cs.setCipherSuite("SRP-DSS-AES-256-CBC-SHA");
 		  cs.setBits(256);
 		  cs.setTlsVersion("SSLv3");
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(),CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  cs.setCipherSuite("ADH-AES256-SHA256");
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(),CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  cs.setCipherSuite("SEED-SHA");
 		  cs.setBits(56);
-		  ratingList.add(CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
+		  ratingList.put(cs.getCipherSuite(),CipherSuiteRatingRepository.getInstance().getCipherRating(cs));
 		  
-		  for (SslRating r : ratingList) {
+		  for (Map.Entry<String, SslRating> r : ratingList.entrySet()) {
 	      assertTrue(r != null);
-	      System.out.println("Output of TestRating: Value is " + r.getValue() + ", "
-	          + "Cipher is " + r.getCipherSuite().getCipherSuite() + " and Description is: " + r.getDescription());
+	      System.out.println("Output of TestRating: Value is " + r.getValue().getValue() + ", "
+	          + "Cipher is " + r.getKey() + " and Description is: " + r.getValue().getDescription());
 	    }
 		  
 		} catch (Exception e) {
@@ -98,7 +98,7 @@ public class HttpsAnalysisTests {
     cs.setBits(0);
     cs.setTlsVersion("SSLv3");
     
-    // wrong bulk ciphers
+    // wrong cipher suite names
     try {
       cs.setCipherSuite("NULL-NULL-MD55");
       testRating = CipherSuiteRatingRepository.getInstance().getCipherRating(cs);

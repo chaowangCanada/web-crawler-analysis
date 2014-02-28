@@ -8,45 +8,44 @@ import java.util.List;
 
 public class Main
 {
-  protected List<SslAnalysis> analysisMethods;
-  protected boolean        alwaysTerminate = false;
+  private List<String> analysisOptions;
+  private boolean alwaysTerminate = false;
+  private SslAnalysis sa;
 
-  protected void showMenu()
+  private void showMenu()
   {
     System.out.println("\n");
     int i = 0;
-    for (SslAnalysis a : analysisMethods)
+    for (String s : analysisOptions)
     {
-      System.out.println(i++ + ". " + a.getName());
+      System.out.println(i++ + ". " + s);
     }
     System.out.println("Your Choice: ");
   }
 
-  public SslAnalysis menu()
+  private int menu()
   {
     int wahl = -1;
-    BufferedReader console = new BufferedReader(new InputStreamReader(
-        System.in));
+    BufferedReader console = new BufferedReader(new InputStreamReader(System.in));
+    
     while (wahl < 0)
     {
-      try
-      {
+      try {
         showMenu();
         wahl = Integer.parseInt(console.readLine());
+      } catch (Exception ex) {
+        System.err.println(ex.getMessage());
       }
-      catch (Exception ex)
-      {
-
-      }
-      if (wahl >= analysisMethods.size())
-      {
+      
+      if (wahl >= analysisOptions.size() || wahl < 0) {
         wahl = -1;
+        System.out.println("Info: Options are only available between 0 and " + (analysisOptions.size()-1));
       }
     }
-    return analysisMethods.get(wahl);
+    return wahl;
   }
 
-  public void run()
+  private void run()
   {
     System.out.print("Init Database... ");
     DatabaseManager.getInstance();
@@ -56,28 +55,43 @@ public class Main
     initAnalysis();
     System.out.print("Done.\n");
 
-    String folder = "./export/";
-    new File(folder).mkdirs();
-
     int error = 0;
     do
     {
-      SslAnalysis analysis = menu();
-      error = analysis.start();
-      String output = analysis.exportToFolder(folder);
-      System.out.println("Exported Details: " + output);
+      error = performChoice(menu());
     }
     while (error >= 0 && !alwaysTerminate);
   }
 
-  protected void initAnalysis()
+  private void initAnalysis()
   {
-    analysisMethods = new ArrayList<SslAnalysis>();
-    analysisMethods.add(new SslAnalysisExit());
-    analysisMethods.add(new SslAnalysis(false));
-    analysisMethods.add(new SslAnalysis(true));
+    analysisOptions = new ArrayList<String>();
+    sa = new SslAnalysis();
+    // if another option for the menu is needed, add another String and update the method performChoice in SslAnalysis
+    analysisOptions.add("Exit");
+    analysisOptions.add("Analyse Hosts");
+    analysisOptions.add("Update Database");
+    analysisOptions.add("Update Cipher-Suite-Rating");
 
-    alwaysTerminate = true; // TODO: set to false
+    alwaysTerminate = false;
+  }
+  
+  private int performChoice(int choice) {
+    switch (choice) {
+      case 0: 
+        System.out.println("Thanks for using HttpsAnalysis4j. Bye.");
+        return -1;
+      case 1:
+        return sa.start();
+      case 2:
+        DatabaseManager.reinitialize();
+        System.out.println("Reinitialized database.");
+        return 0;
+      case 3: 
+        return sa.updateCipherSuiteRating();
+      default:
+        return -1;
+    }
   }
 
   public static void main(String[] args)

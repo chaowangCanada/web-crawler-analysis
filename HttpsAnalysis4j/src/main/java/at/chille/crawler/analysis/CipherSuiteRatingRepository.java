@@ -29,39 +29,54 @@ public class CipherSuiteRatingRepository {
     return _instance;
   }
   
-  public synchronized void addHandshakeRating(String name, SslRating rating) {
-    previous = handshakeRatings.put(name, rating);
-    if (previous != null)
+  public synchronized void addHandshakeRating(String name, SslRating rating) { 
+    if (!handshakeRatings.containsKey(name))
+      handshakeRatings.put(name, rating);
+    else if (handshakeRatings.get(name).getValue() != rating.getValue()) {
+      previous = handshakeRatings.put(name, rating);
       System.out.println("Overwritten Handshake-Rating " + name + ": " 
           + previous.getValue() + "  with new Rating: " + rating.getValue());
+    }
   }
 
   public synchronized void addCipherRating(String name, SslRating rating) {
-    previous = cipherRatings.put(name, rating);
-    if (previous != null)
+    if (!cipherRatings.containsKey(name))
+      cipherRatings.put(name, rating);
+    else if (cipherRatings.get(name).getValue() != rating.getValue()) {
+      previous = cipherRatings.put(name, rating);
       System.out.println("Overwritten Cipher-Rating " + name + ": " 
           + previous.getValue() + "  with new Rating: " + rating.getValue());
+    }
   }
 
   public synchronized void addHashRating(String name, SslRating rating) {
-    previous = hashRatings.put(name, rating);
-    if (previous != null)
+    if (!hashRatings.containsKey(name))
+      hashRatings.put(name, rating);
+    else if (hashRatings.get(name).getValue() != rating.getValue()) {
+      previous = hashRatings.put(name, rating);
       System.out.println("Overwritten Hash-Rating " + name + ": " 
-          + previous.getValue() + ",  with new Rating: " + rating.getValue());
+          + previous.getValue() + "  with new Rating: " + rating.getValue());
+    }
   }
   
   public synchronized void addBitsOfBulkCipherRating(String name, SslRating rating) {
-    previous = bitsOfBulkCipherRatings.put(name, rating);
-    if (previous != null)
+    if (!bitsOfBulkCipherRatings.containsKey(name))
+      bitsOfBulkCipherRatings.put(name, rating);
+    else if (bitsOfBulkCipherRatings.get(name).getValue() != rating.getValue()) {
+      previous = bitsOfBulkCipherRatings.put(name, rating);
       System.out.println("Overwritten Bits-of-BulkCipher-Rating " + name + ": " 
-          + previous.getValue() + ",  with new Rating: " + rating.getValue());
+          + previous.getValue() + "  with new Rating: " + rating.getValue());
+    }
   }
   
   public synchronized void addTlsVersionRating(String name, SslRating rating) {
-    previous = tlsVersionRatings.put(name, rating);
-    if (previous != null)
+    if (!tlsVersionRatings.containsKey(name))
+      tlsVersionRatings.put(name, rating);
+    else if (tlsVersionRatings.get(name).getValue() != rating.getValue()) {
+      previous = tlsVersionRatings.put(name, rating);
       System.out.println("Overwritten Tls-Version-Rating " + name + ": " 
-          + previous.getValue() + ",  with new Rating: " + rating.getValue());
+          + previous.getValue() + "  with new Rating: " + rating.getValue());
+    }
   }
 
   public synchronized SslRating getCipherRating(CipherSuite cs) 

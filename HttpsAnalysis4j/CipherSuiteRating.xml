@@ -54,7 +54,7 @@
     </BitsOfBulkCiphers>
       
     <Hashes>
-      <Hash name="NULL" rating="-100">No signature is the worst option</Hash>
+      <Hash name="NULL" rating="-20">No signature is the worst option</Hash>
       <Hash name="MD5" rating="-10">MD5 is deprecated. See https://en.wikipedia.org/wiki/MD5#Security</Hash>
       <Hash name="SHA" rating="-4">SHA1 has known weaknesses. See https://en.wikipedia.org/wiki/SHA-1#Cryptanalysis_and_validation</Hash>
       <Hash name="SHA256" rating="0">Standard.</Hash>

@@ -1,5 +1,7 @@
 package at.chille.crawler.analysis;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -8,7 +10,7 @@ import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 /**
  * extends the class HostSslInfo by security rating attributes
  * 
- * @author acn
+ * @author kwk
  * 
  */
 public class HostSslInfoWithRating extends HostSslInfo {
@@ -58,10 +60,20 @@ public class HostSslInfoWithRating extends HostSslInfo {
       
       for (SslRating r : securityRatingsAccepted) 
         sumOfRatingsAccepted += r.getValue();
-      
       for (SslRating r : securityRatingsPreferred) 
         sumOfRatingsPreferred += r.getValue();
       
-      this.overallRating = sumOfRatingsAccepted*0.25 + sumOfRatingsPreferred; 
+      sumOfRatingsAccepted  /= securityRatingsAccepted.size();
+      sumOfRatingsPreferred /= securityRatingsPreferred.size();
+      
+      double oRNotRounded = sumOfRatingsAccepted*0.25 + sumOfRatingsPreferred*0.75;
+      
+      if (!Double.isNaN(oRNotRounded))
+        this.overallRating = new BigDecimal(oRNotRounded).setScale(2, RoundingMode.HALF_UP).doubleValue();
+      else {
+        System.out.println("WARNING: List of accepted and/or preferred Cipher-Suites is empty for host " 
+                            + this.getHostSslName() + "!");
+        this.overallRating = oRNotRounded;
+      }
     }
 }
