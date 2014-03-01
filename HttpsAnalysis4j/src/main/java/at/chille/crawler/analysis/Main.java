@@ -70,7 +70,6 @@ public class Main
     // if another option for the menu is needed, add another String and update the method performChoice in SslAnalysis
     analysisOptions.add("Exit");
     analysisOptions.add("Analyse Hosts");
-    analysisOptions.add("Update Database");
     analysisOptions.add("Update Cipher-Suite-Rating");
 
     alwaysTerminate = false;
@@ -83,11 +82,7 @@ public class Main
         return -1;
       case 1:
         return sa.start();
-      case 2:
-        DatabaseManager.reinitialize();
-        System.out.println("Reinitialized database.");
-        return 0;
-      case 3: 
+      case 2: 
         return sa.updateCipherSuiteRating();
       default:
         return -1;

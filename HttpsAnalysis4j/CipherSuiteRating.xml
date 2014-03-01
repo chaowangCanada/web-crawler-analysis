@@ -39,11 +39,12 @@
       <BulkCipher name="DES-CBC" rating="-10">DES is deprecated. See https://en.wikipedia.org/wiki/Data_Encryption_Standard#Brute_force_attack</BulkCipher>
       <BulkCipher name="3DES-EDE-CBC" rating="0">3DES is still secure but slow. See http://security.stackexchange.com/questions/26179/security-comparsion-of-3des-and-aes</BulkCipher>
       <BulkCipher name="DES-CBC3" rating="0">3DES is still secure but slow. See http://security.stackexchange.com/questions/26179/security-comparsion-of-3des-and-aes</BulkCipher>
+      <BulkCipher name="IDEA-CBC" rating="-100">TODO!</BulkCipher>
       <BulkCipher name="RC2-CBC" rating="-10">RC2 is deprecated.</BulkCipher>
       <BulkCipher name="RC4" rating="-8">RC4 has serious vulnerabilities. See https://en.wikipedia.org/wiki/RC4#Security</BulkCipher>
       <BulkCipher name="SEED" rating="-1">SEED has no known vulnerabilities, but is not well studied. http://crypto.stackexchange.com/questions/11404/cryptanalysis-and-weaknesses-of-seed-cipher</BulkCipher>
     </BulkCiphers>
-    
+
     <BitsOfBulkCiphers>
       <BitsOfBulkCipher name="0" rating="-100">blaa</BitsOfBulkCipher>
       <BitsOfBulkCipher name="40" rating="-10">blaa</BitsOfBulkCipher>

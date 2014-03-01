@@ -36,22 +36,25 @@ import at.chille.crawler.database.repository.sslchecker.HostSslInfoRepository;
  */
 public class SslAnalysis
 {
-  protected PrintStream out;
-  protected String name;
-  protected String description;
-  protected String xmlFile = "CipherSuiteRating.xml";
-  protected String plainFolder = "ssl-export";
-  protected String currentFolder;
+  private PrintStream out;
   
-  protected long start = -1;
-  protected long end = -1;
+  private String plainFolder = "ssl-export";
+  private String currentFolder;
   
-  protected boolean firstRun = true; // TODO: implement check in corresponding methods
+  private long start = -1;
+  private long end = -1;
+  
+  private boolean firstRun = true; // TODO: implement check in corresponding methods --> remove if not necessary
   
   private Map<String, ArrayList<HostSslInfoWithRating>> hostSslInfoToAnalyze = null;
   private Map<String, ArrayList<HostSslInfoWithRating>> hostSslInfoSorted    = null;
   private RatingValueComparator ratingValueComparator = null;
 
+  //-----------------------------CONSTANTS-----------------------------
+  private String xmlFileCipherSuiteRating = "CipherSuiteRating.xml";
+  private String reportHTMLFileName = "SslAnalysis.html";
+  private String reportCSSFileName = "SslAnalysisStyle.css";
+  //-------------------------------------------------------------------
   
   /**
    * Default Constructor.
@@ -77,9 +80,9 @@ public class SslAnalysis
   public int updateCipherSuiteRating() {
     try {
       // parse the xml-file which contains the rating for the Cipher-Suites
-      File file = new File(xmlFile);
+      File file = new File(xmlFileCipherSuiteRating);
       assertTrue("Create a file CipherSuiteRating.xml first!", file.exists());
-      FileInputStream streamIn    = new FileInputStream(xmlFile);
+      FileInputStream streamIn    = new FileInputStream(xmlFileCipherSuiteRating);
       XmlCipherSuiteParser parser = new XmlCipherSuiteParser();
       parser.parse(streamIn);
       out.println("Parsed Cipher-Suite-Rating");
@@ -104,7 +107,7 @@ public class SslAnalysis
     try
     {
       createOutputFolder();
-      File indexFile = new File(currentFolder, "SslAnalysis.html");
+      File indexFile = new File(currentFolder, reportHTMLFileName);
       FileWriter fw = new FileWriter(indexFile, false);
       BufferedWriter index = new BufferedWriter(fw);
       
@@ -118,19 +121,45 @@ public class SslAnalysis
       index.newLine();
       index.write("<title>Analysis of Ssl-Hosts</title>");
       index.newLine();
+      index.write("<link href=\"" + reportCSSFileName + "\" rel=\"stylesheet\" type=\"text/css\" />");
+      index.newLine(); 
       index.write("</head>");
       index.newLine();
       
+      index.write("<header>");
+      index.newLine();
       index.write("<h1> Security-Rating of Ssl-Hosts in Austria </h1>");
       index.newLine();
-      index.write("<h2> Rating of latest crawl per host s</h2>");
+      index.write("<h2> Rating of latest crawl per hosts </h2>");
+      index.newLine();
+      index.write("</header>");
       index.newLine();
       index.write("</body>");
       index.newLine();
       
-      index.write("<ol>");
+      index.write("<ol class=\"top-3-hosts\">");
       index.newLine();
       
+      long top3Counter = 0;
+      long top3Actual  = 3;
+      double previousRating = 0;
+      double actualRating;
+      
+      // check for same values after the third rating
+      for (Map.Entry<String, ArrayList<HostSslInfoWithRating>> e : hostSslInfoSorted.entrySet()) {
+        top3Counter++;
+        actualRating   = e.getValue().get(0).getOverallRating();
+        if (top3Counter == top3Actual+1) {
+          if (previousRating == actualRating)
+            top3Actual++;
+          else
+            break;
+        }
+        previousRating = e.getValue().get(0).getOverallRating();
+      }
+      
+      top3Counter = 0;
+      // write list
       for (Map.Entry<String, ArrayList<HostSslInfoWithRating>> e : hostSslInfoSorted.entrySet()) {
         index.write("  <li>" + e.getKey());
         index.newLine();
@@ -141,47 +170,35 @@ public class SslAnalysis
         index.write("  </li>");
         index.newLine();
         
+        if (top3Counter != top3Actual+1) {
+          top3Counter++;
+          if (top3Counter == top3Actual) {
+            index.write("</ol>");
+            index.newLine();
+            index.write("<ol class=\"other-hosts\" start=\"4\">");
+            index.newLine();
+          }
+        }
+        
+        
       }
       
-      index.write("</ol>");
-      index.newLine();
+      if (top3Counter == top3Actual+1) {
+        index.write("</ol>");
+        index.newLine();
+      }
       
       index.write("<body>");
       index.newLine();
       index.write("</html> ");
       
-      
-      /*index.write("<html><body><h1>Cookies</h1>");
-      index.write("<ul>");
-      index.write("<li>Https Cookies without 'Secure': " + httpsCookiesNotSecure.size() + " of "
-          + httpsCookiesCount + " HTTPS-Cookies</li>");
-      index.write("<li>HTTPonly Cookies: " + usingHttpOnly.size() + " of total " + cookies.size()
-          + " Cookies.</li>");
-      index.write("</ul>");
-      index.newLine();
-
-      // HTTPS Cookies
-      index.write("<h2>Insecure HTTPS Cookies (" + httpsCookiesNotSecure.size() + "/"
-          + httpsCookiesCount + ")</h2>");
-      index.newLine();
-      this.exportCookieMap(httpsCookiesNotSecure, index);
-
-      // HTTPonly Cookies
-      index
-          .write("<h2>HTTPonly Cookies (" + usingHttpOnly.size() + "/" + cookies.size() + ")</h2>");
-      index.newLine();
-      this.exportCookieMap(usingHttpOnly, index);
-
-      // ALL Cookies
-      index.write("<h2>All Cookies (" + cookies.size() + ")</h2>");
-      this.exportCookieMap(cookies, index);
-      index.write("</body></html>");*/
       index.close();
       fw.close();
       
+      createCssFile();
+      
       hostSslInfoSorted.clear();
       out.println("Exported details: " + indexFile.getCanonicalPath());
-      return 0;
     }
     catch (Exception e)
     {
@@ -189,6 +206,98 @@ public class SslAnalysis
       e.printStackTrace();
       return -1;
     }
+    
+    
+    return 0;
+  }
+  
+  private void createCssFile() throws Exception {
+    File indexFile = new File(currentFolder, reportCSSFileName);
+    FileWriter fw = new FileWriter(indexFile, false);
+    BufferedWriter index = new BufferedWriter(fw);
+    
+    index.write("html { \n  font-family: Sans-Serif; }");
+    index.newLine();
+    
+    index.write("header {");
+    index.newLine();
+    index.write("  background: linear-gradient(black, red, red, white, red, red, black); ");
+    index.write("text-align:center; color: black;}");
+    index.newLine();
+    
+    index.write("body { \n  background: steelblue; }");
+    index.newLine();
+    
+    index.write("ol.top-3-hosts { \n  color: white; }");
+    index.newLine();
+    
+    index.write("ol.other-hosts{");
+    index.newLine();
+    index.write("  display: block; background: white; }");
+    index.newLine();
+    index.write("ol.other-hosts li > dl {");
+    index.newLine();
+    index.write("  display: none; }");
+    index.newLine();
+    index.write("ol.other-hosts li:hover > dl {");
+    index.newLine();
+    index.write("  display: block; }");
+    index.newLine();
+    
+  
+  /*.rectangle-list a{
+    position: relative;
+    display: block;
+    padding: .4em .4em .4em .8em;
+    *padding: .4em;
+    margin: .5em 0 .5em 2.5em;
+    background: #ddd;
+    color: #444;
+    text-decoration: none;
+    transition: all .3s ease-out;   
+}
+
+.rectangle-list a:hover{
+    background: #eee;
+}   
+
+.rectangle-list a:before{
+    content: counter(li);
+    counter-increment: li;
+    position: absolute; 
+    left: -2.5em;
+    top: 50%;
+    margin-top: -1em;
+    background: #fa8072;
+    height: 2em;
+    width: 2em;
+    line-height: 2em;
+    text-align: center;
+    font-weight: bold;
+}
+
+.rectangle-list a:after{
+    position: absolute; 
+    content: '';
+    border: .5em solid transparent;
+    left: -1em;
+    top: 50%;
+    margin-top: -.5em;
+    transition: all .3s ease-out;               
+}
+
+.rectangle-list a:hover:after{
+    left: -.5em;
+    border-left-color: #fa8072;             
+}  */
+    
+    index.close();
+    fw.close();
+//    p
+//    {
+//    font-family:"Times New Roman";
+//    font-size:20px;
+//    }
   }
   
   /**
@@ -196,7 +305,7 @@ public class SslAnalysis
    * 
    * @return Date
    */
-  public String getCurrentDate() {
+  private String getCurrentDate() {
     DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
     //get current date time with Date()
     Date date = new Date();
@@ -208,7 +317,7 @@ public class SslAnalysis
    * 
    * @return none
    */
-  public void createOutputFolder() {
+  private void createOutputFolder() {
     currentFolder = "./" + plainFolder + "." + getCurrentDate() + "/";
     
     File file = new File(currentFolder);
@@ -405,26 +514,6 @@ public class SslAnalysis
     if (end == 0)
       return -1;
     return end - start;
-  }
-
-  /**
-   * Returns the name of the Analysis (e.g. for Menu)
-   * 
-   * @return
-   */
-  public String getName()
-  {
-    return name;
-  }
-
-  /**
-   * Returns a more detailed description of the Analysis
-   * 
-   * @return
-   */
-  public String getDescription()
-  {
-    return description;
   }
 
   /**
