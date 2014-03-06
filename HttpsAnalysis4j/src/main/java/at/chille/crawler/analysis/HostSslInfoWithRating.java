@@ -2,7 +2,10 @@ package at.chille.crawler.analysis;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import at.chille.crawler.database.model.sslchecker.HostSslInfo;
@@ -15,22 +18,31 @@ import at.chille.crawler.database.model.sslchecker.HostSslInfo;
  */
 public class HostSslInfoWithRating extends HostSslInfo {
 	
-    private Set<SslRating> securityRatingsAccepted;
-    private Set<SslRating> securityRatingsPreferred;
+    private List<SslRating> securityRatingsAccepted;
+    private List<SslRating> securityRatingsPreferred;
     private double overallRating;
     
-    public HostSslInfoWithRating()
-    {
+    public HostSslInfoWithRating() {
       super();
-      this.securityRatingsAccepted  = new HashSet<SslRating>();
-      this.securityRatingsPreferred = new HashSet<SslRating>();
+      this.securityRatingsAccepted  = new ArrayList<SslRating>();
+      this.securityRatingsPreferred = new ArrayList<SslRating>();
+    }
+    
+    public HostSslInfoWithRating(HostSslInfo hsi) {
+      this();
+      this.addAccepted(hsi.getAccepted());
+      this.addFailed(hsi.getFailed());
+      this.addPreferred(hsi.getPreferred());
+      this.addRejected(hsi.getRejected());
+      this.setHostSslName(hsi.getHostSslName());
+      this.setTimestamp(hsi.getTimestamp());
     }
 
-    public Set<SslRating> getSecurityRatingsAccepted() {
+    public List<SslRating> getSecurityRatingsAccepted() {
       return securityRatingsAccepted;
     }
 
-    public void setSecurityRatingsAccepted(Set<SslRating> securityRatingsAccepted) {
+    public void setSecurityRatingsAccepted(List<SslRating> securityRatingsAccepted) {
       this.securityRatingsAccepted = securityRatingsAccepted;
     }
     
@@ -38,11 +50,11 @@ public class HostSslInfoWithRating extends HostSslInfo {
       this.securityRatingsAccepted.add(sslRating);
     }
 
-    public Set<SslRating> getSecurityRatingsPreferred() {
+    public List<SslRating> getSecurityRatingsPreferred() {
       return securityRatingsPreferred;
     }
 
-    public void setSecurityRatingsPreferred(Set<SslRating> securityRatingsPreferred) {
+    public void setSecurityRatingsPreferred(List<SslRating> securityRatingsPreferred) {
       this.securityRatingsPreferred = securityRatingsPreferred;
     }
     
@@ -54,7 +66,7 @@ public class HostSslInfoWithRating extends HostSslInfo {
       return overallRating;
     }
 
-    public void calculateOverallRating() {
+    public void calculateOverallRating(Set<String> acceptedEmpty, Set<String> preferredEmpty) {
       double sumOfRatingsAccepted  = 0;
       double sumOfRatingsPreferred = 0;
       
@@ -66,14 +78,24 @@ public class HostSslInfoWithRating extends HostSslInfo {
       sumOfRatingsAccepted  /= securityRatingsAccepted.size();
       sumOfRatingsPreferred /= securityRatingsPreferred.size();
       
+      if (Double.isNaN(sumOfRatingsAccepted))
+        acceptedEmpty.add(this.getHostSslName());
+      
+      if (Double.isNaN(sumOfRatingsPreferred))
+        preferredEmpty.add(this.getHostSslName());
+      
       double oRNotRounded = sumOfRatingsAccepted*0.25 + sumOfRatingsPreferred*0.75;
       
-      if (!Double.isNaN(oRNotRounded))
+      if (!Double.isNaN(oRNotRounded)) {
         this.overallRating = new BigDecimal(oRNotRounded).setScale(2, RoundingMode.HALF_UP).doubleValue();
+      }
       else {
-        System.out.println("WARNING: List of accepted and/or preferred Cipher-Suites is empty for host " 
-                            + this.getHostSslName() + "!");
         this.overallRating = oRNotRounded;
       }
+    }
+    
+    public void sortSecurityRatingsSets() {
+      Collections.sort(this.securityRatingsPreferred, new ComparatorSslRating());
+      Collections.sort(this.securityRatingsAccepted, new ComparatorSslRating());
     }
 }

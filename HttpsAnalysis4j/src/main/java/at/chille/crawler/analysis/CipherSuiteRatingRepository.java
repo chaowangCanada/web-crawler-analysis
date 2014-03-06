@@ -1,9 +1,12 @@
 package at.chille.crawler.analysis;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import at.chille.crawler.database.model.sslchecker.CipherSuite;
 import javassist.NotFoundException;
 
@@ -142,6 +145,7 @@ public class CipherSuiteRatingRepository {
     // finally calculate the rating for the whole CipherSuite
     double finalValue = handshake.getValue() + (cipher.getValue()+bitsOfBulkCipher.getValue())*0.7 + 
                         hash.getValue()*0.3 + tlsVersion.getValue();
+    
     String description = handshake.getDescription() + "." + cipher.getDescription() + "." + 
                          hash.getDescription() + "." + bitsOfBulkCipher.getDescription() + "." + 
                          tlsVersion.getDescription();

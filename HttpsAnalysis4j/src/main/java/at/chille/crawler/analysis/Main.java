@@ -67,10 +67,11 @@ public class Main
   {
     analysisOptions = new ArrayList<String>();
     sa = new SslAnalysis();
-    // if another option for the menu is needed, add another String and update the method performChoice in SslAnalysis
+    // if another option for the menu is needed, add another String and update the method performChoice
     analysisOptions.add("Exit");
     analysisOptions.add("Analyse Hosts");
     analysisOptions.add("Update Cipher-Suite-Rating");
+    analysisOptions.add("Set time (in hours) to merge entries for hosts in the DB");
 
     alwaysTerminate = false;
   }
@@ -84,6 +85,8 @@ public class Main
         return sa.start();
       case 2: 
         return sa.updateCipherSuiteRating();
+      case 3:
+        return sa.setHostMergeTime();
       default:
         return -1;
     }
