@@ -48,14 +48,16 @@ public class HostSslInfo {
 	/**
 	 * CipherSuites that are rejected by this host
 	 */
-	@ManyToMany(fetch = FetchType.LAZY)
+	@ManyToMany(fetch = FetchType.EAGER)
+//	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "CIPHER_REJ_ID")
 	private Set<CipherSuite> rejected;
 
 	/**
 	 * CipherSuites that are silently rejected by this host
 	 */
-	@ManyToMany(fetch = FetchType.LAZY)
+	@ManyToMany(fetch = FetchType.EAGER)
+//	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "CIPHER_FAIL_ID")
 	private Set<CipherSuite> failed;
 

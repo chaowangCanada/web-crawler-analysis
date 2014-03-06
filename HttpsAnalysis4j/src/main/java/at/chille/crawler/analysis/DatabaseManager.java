@@ -1,5 +1,8 @@
 package at.chille.crawler.analysis;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.inject.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +10,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Component;
 
+import at.chille.crawler.database.model.sslchecker.HostSslInfo;
 import at.chille.crawler.database.repository.sslchecker.CipherSuiteRepository;
 import at.chille.crawler.database.repository.sslchecker.HostSslInfoRepository;
 
@@ -21,6 +25,7 @@ public class DatabaseManager
 {
   private static ClassPathXmlApplicationContext context = null;
   private static DatabaseManager                _instance;
+  private Map<String, HostSslInfo> lastRecentHostSslInfos;
 
   public static DatabaseManager getInstance()
   {
@@ -78,6 +83,46 @@ public class DatabaseManager
     this.cipherSuiteRepository = t;
   }
 
+  /**
+   * Load the last scanned SSL-hosts from the db. This is used to
+   * speedup further calls to getMostRecentHostSslInfo. 
+   */
+  public synchronized void loadLastRecentHostSslInfos()
+  {
+    lastRecentHostSslInfos = new HashMap<String, HostSslInfo>();
+    Iterable<HostSslInfo> hosts = hostSslInfoRepository.findAll();
+    for (HostSslInfo h : hosts) {
+      HostSslInfo lastInfo = lastRecentHostSslInfos.get(h.getHostSslName());
+      if(lastInfo == null) {
+        lastRecentHostSslInfos.put(h.getHostSslName(), h);
+      } else {
+        Long lastTimestamp = lastInfo.getTimestamp() == null ? 
+            0L : lastInfo.getTimestamp();
+        Long currentTimestamp = h.getTimestamp() == null ? 
+            0L : h.getTimestamp();
+        
+        if (currentTimestamp > lastTimestamp) {
+          //found a newer HostSslInfo
+          lastRecentHostSslInfos.put(h.getHostSslName(), h);
+        }
+      }
+    }
+  }
+  
+  /**
+   * Return the most recent HostSslInfo object from previous scans.
+   * loadLastHostSslInfos must be called once before.
+   * @param host to search for
+   * @return the most recent HostSslInfo object or null
+   */
+  public synchronized HostSslInfo getMostRecentHostSslInfo(String host) {
+    return lastRecentHostSslInfos.get(host);
+  }
+  
+  public synchronized Map<String, HostSslInfo> getLastHostSslInfos() {
+    return lastRecentHostSslInfos;
+  }
+  
   /*@Autowired
   HostInfoRepository        hostInfoRepository;
   @Autowired
