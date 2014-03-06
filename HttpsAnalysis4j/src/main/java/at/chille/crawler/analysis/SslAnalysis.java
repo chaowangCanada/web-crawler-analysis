@@ -9,6 +9,8 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,6 +23,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
+import javax.persistence.CascadeType;
+import javax.persistence.FetchType;
+import javax.persistence.ManyToMany;
 
 import org.hibernate.Hibernate;
 
@@ -69,15 +75,60 @@ public class SslAnalysis
    */
   private int init()
   {
+	HostSslInfoAnnotationHack();
     setHostSslInfos();
-    
     if (firstRun)
       return updateCipherSuiteRating();
     
     return 0;
   }
   
-  public int updateCipherSuiteRating() {
+  private void HostSslInfoAnnotationHack() {
+	  for(Annotation a : HostSslInfo.class.getAnnotations()) {
+		  System.out.println("Annotation: " + a.toString());
+	  }
+	  for(Field f : HostSslInfo.class.getDeclaredFields()) {
+		  System.out.println("Fields: " + f.toString());
+	  }
+	  
+	    final ManyToMany oldAnnotation = (ManyToMany)HostSslInfo.class.getAnnotations()[0];
+	    
+	    Annotation newAnnotation = new ManyToMany() {
+
+	        @Override
+	        public Class<? extends Annotation> annotationType() {
+	            return oldAnnotation.annotationType();
+	        }
+
+			@Override
+			public CascadeType[] cascade() {
+				return new CascadeType[] {CascadeType.ALL};
+			}
+
+			@Override
+			public FetchType fetch() {
+				return FetchType.EAGER;
+			}
+
+			@Override
+			public String mappedBy() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Class targetEntity() {
+				return HostSslInfo.class;	//??
+			}
+	    };
+	    
+	    Field field = Class.class.getDeclaredField("annotations");
+	    field.setAccessible(true);
+	    Map<Class<? extends Annotation>, Annotation> annotations = (Map<Class<? extends Annotation>, Annotation>) field.get(HostSslInfo.class);
+	    annotations.put(ManyToMany.class, newAnnotation);
+}
+
+public int updateCipherSuiteRating() {
     try {
       // parse the xml-file which contains the rating for the Cipher-Suites
       File file = new File(xmlFileCipherSuiteRating);
