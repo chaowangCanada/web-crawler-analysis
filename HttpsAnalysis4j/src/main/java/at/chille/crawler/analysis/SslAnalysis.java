@@ -82,7 +82,6 @@ public class SslAnalysis
    */
   private int init()
   {
-	HostSslInfoAnnotationHack();
     DatabaseManager.getInstance().loadLastRecentHostSslInfos();
     setHostSslInfos();
     
@@ -93,51 +92,6 @@ public class SslAnalysis
     return 0;
   }
   
- private void HostSslInfoAnnotationHack() {
-	  for(Annotation a : HostSslInfo.class.getAnnotations()) {
-		  System.out.println("Annotation: " + a.toString());
-	  }
-	  for(Field f : HostSslInfo.class.getDeclaredFields()) {
-		  System.out.println("Fields: " + f.toString());
-	  }
-	  
-	    final ManyToMany oldAnnotation = (ManyToMany)HostSslInfo.class.getAnnotations()[0];
-	    
-	    Annotation newAnnotation = new ManyToMany() {
-
-	        @Override
-	        public Class<? extends Annotation> annotationType() {
-	            return oldAnnotation.annotationType();
-	        }
-
-			@Override
-			public CascadeType[] cascade() {
-				return new CascadeType[] {CascadeType.ALL};
-			}
-
-			@Override
-			public FetchType fetch() {
-				return FetchType.EAGER;
-			}
-
-			@Override
-			public String mappedBy() {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public Class targetEntity() {
-				return HostSslInfo.class;	//??
-			}
-	    };
-	    
-	    Field field = Class.class.getDeclaredField("annotations");
-	    field.setAccessible(true);
-	    Map<Class<? extends Annotation>, Annotation> annotations = (Map<Class<? extends Annotation>, Annotation>) field.get(HostSslInfo.class);
-	    annotations.put(ManyToMany.class, newAnnotation);
-}
-
   public int updateCipherSuiteRating() {
     try {
       // parse the xml-file which contains the rating for the Cipher-Suites
