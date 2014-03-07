@@ -6,25 +6,25 @@
       <Handshake name="AECDH" rating="-5">Anonymous ECDH key-exchange is vulnerable to MITM.</Handshake>
       <Handshake name="DHE-RSA" rating="5">Ephemeral DH key-exchange enforces perfect forward secrecy for long-term security.</Handshake>
       <Handshake name="DHE-DSS" rating="5">Ephemeral DH key-exchange enforces perfect forward secrecy for long-term security.</Handshake>
-      <Handshake name="EXP" rating="-10">The export variant of RSA is intentionally weak. see http://tools.ietf.org/html/rfc4346#appendix-A.5</Handshake>
-      <Handshake name="EXP-ADH" rating="-10">The export variant of anonymous DH is intentionally weak. see http://tools.ietf.org/html/rfc4346#appendix-A.5</Handshake>
-      <Handshake name="EXP-EDH-DSS" rating="-10">The export variant of DH-DSS is intentionally weak. see http://tools.ietf.org/html/rfc4346#appendix-A.5</Handshake>
-      <Handshake name="EXP-EDH-RSA" rating="-10">The export variant of DH-RSA is intentionally weak. see http://tools.ietf.org/html/rfc4346#appendix-A.5</Handshake>
+      <Handshake name="EXP" rating="-10">The export variant of RSA is intentionally weak. <![CDATA[<a href="http://tools.ietf.org/html/rfc4346#appendix-A.5" target="_newtab">Reference</a>]]></Handshake>
+      <Handshake name="EXP-ADH" rating="-10">The export variant of anonymous DH is intentionally weak. <![CDATA[<a href="http://tools.ietf.org/html/rfc4346#appendix-A.5" target="_newtab">Reference</a>]]></Handshake>
+      <Handshake name="EXP-EDH-DSS" rating="-10">The export variant of DH-DSS is intentionally weak. <![CDATA[<a href="http://tools.ietf.org/html/rfc4346#appendix-A.5" target="_newtab">Reference</a>]]></Handshake>
+      <Handshake name="EXP-EDH-RSA" rating="-10">The export variant of DH-RSA is intentionally weak. <![CDATA[<a href="http://tools.ietf.org/html/rfc4346#appendix-A.5" target="_newtab">Reference</a>]]></Handshake>
       <Handshake name="EDH-DSS" rating="0">Diffie Hellman key exchange + Digital Signature Scheme authentication</Handshake>
       <Handshake name="EDH-RSA" rating="0">Diffie Hellman key exchange + RSA authentication</Handshake>
-      <Handshake name="ECDH-RSA" rating="-2">Elliptic curve DH. EC constants maybe manipulated. http://en.wikipedia.org/wiki/Dual_EC_DRBG</Handshake>
-      <Handshake name="ECDH-ECDSA" rating="-2">Elliptic curve DH. EC constants maybe manipulated. http://en.wikipedia.org/wiki/Dual_EC_DRBG</Handshake>
-      <Handshake name="ECDHE-RSA" rating="3">Ephemeral ECDH key-exchange enforces perfect forward secrecy for long-term security. EC constants maybe manipulated. http://en.wikipedia.org/wiki/Dual_EC_DRBG</Handshake>
-      <Handshake name="ECDHE-ECDSA" rating="3">Ephemeral ECDH key-exchange enforces perfect forward secrecy for long-term security. EC constants maybe manipulated. http://en.wikipedia.org/wiki/Dual_EC_DRBG</Handshake>
-      <Handshake name="PSK" rating="0">Pre-shared keys are secure if they are large, random and regularly changed. See https://tools.ietf.org/html/rfc4492</Handshake>
+      <Handshake name="ECDH-RSA" rating="-2">Elliptic curve DH. EC constants maybe manipulated. <![CDATA[<a href="http://en.wikipedia.org/wiki/Dual_EC_DRBG" target="_newtab">Reference</a>]]></Handshake>
+      <Handshake name="ECDH-ECDSA" rating="-2">Elliptic curve DH. EC constants maybe manipulated. <![CDATA[<a href="http://en.wikipedia.org/wiki/Dual_EC_DRBG" target="_newtab">Reference</a>]]></Handshake>
+      <Handshake name="ECDHE-RSA" rating="3">Ephemeral ECDH key-exchange enforces perfect forward secrecy for long-term security. EC constants maybe manipulated. <![CDATA[<a href="http://en.wikipedia.org/wiki/Dual_EC_DRBG" target="_newtab">Reference</a>]]></Handshake>
+      <Handshake name="ECDHE-ECDSA" rating="3">Ephemeral ECDH key-exchange enforces perfect forward secrecy for long-term security. EC constants maybe manipulated. <![CDATA[<a href="http://en.wikipedia.org/wiki/Dual_EC_DRBG" target="_newtab">Reference</a>]]></Handshake>
+      <Handshake name="PSK" rating="0">Pre-shared keys are secure if they are large, random and regularly changed. <![CDATA[<a href="https://tools.ietf.org/html/rfc4492" target="_newtab">Reference</a>]]></Handshake>
       <Handshake name="RSA" rating="0">RSA is considered as the standard.</Handshake>
-      <Handshake name="SRP" rating="2">Secure Remote Password provides client authentication. See https://tools.ietf.org/html/rfc2945</Handshake>
-      <Handshake name="SRP-DSS" rating="3">Secure Remote Password provides client authentication. See https://tools.ietf.org/html/rfc2945</Handshake>
-      <Handshake name="SRP-RSA" rating="3">Secure Remote Password provides client authentication. See https://tools.ietf.org/html/rfc2945</Handshake>
+      <Handshake name="SRP" rating="2">Secure Remote Password provides client authentication. <![CDATA[<a href="https://tools.ietf.org/html/rfc2945" target="_newtab">Reference</a>]]></Handshake>
+      <Handshake name="SRP-DSS" rating="3">Secure Remote Password provides client authentication. <![CDATA[<a href="https://tools.ietf.org/html/rfc2945" target="_newtab">Reference</a>]]></Handshake>
+      <Handshake name="SRP-RSA" rating="3">Secure Remote Password provides client authentication. <![CDATA[<a href="https://tools.ietf.org/html/rfc2945" target="_newtab">Reference</a>]]></Handshake>
     </Handshakes>
     
     <BulkCiphers>
-      <BulkCipher name="NULL" rating="-10">No DTLS! see https://en.wikipedia.org/wiki/Datagram_Transport_Layer_Security</BulkCipher>
+      <BulkCipher name="NULL" rating="-10">No DTLS! <![CDATA[<a href="https://en.wikipedia.org/wiki/Datagram_Transport_Layer_Security" target="_newtab">Reference</a>]]></BulkCipher>
       <BulkCipher name="AES128" rating="0">AES with 128bits is considered as the standard.</BulkCipher>
       <BulkCipher name="AES128-CBC" rating="0">AES with 128bits is considered as the standard.</BulkCipher>
       <BulkCipher name="AES-128-CBC" rating="0">AES with 128bits is considered as the standard.</BulkCipher>
@@ -33,41 +33,32 @@
       <BulkCipher name="AES256-CBC" rating="2"></BulkCipher>
       <BulkCipher name="AES-256-CBC" rating="2"></BulkCipher>
       <BulkCipher name="AES256-GCM" rating="2"></BulkCipher>
-      <BulkCipher name="CAMELLIA128" rating="0">Camellia is probably better than AES but not so extensively investigated, therefore rated as equal as AES. See https://en.wikipedia.org/wiki/Camellia_%28cipher%29</BulkCipher>
-      <BulkCipher name="CAMELLIA256" rating="2">Camellia is probably better than AES but not so extensively investigated, therefore rated as equal as AES. See https://en.wikipedia.org/wiki/Camellia_%28cipher%29</BulkCipher>
-      <BulkCipher name="DES" rating="-10">DES is deprecated. See https://en.wikipedia.org/wiki/Data_Encryption_Standard#Brute_force_attack</BulkCipher>
-      <BulkCipher name="DES-CBC" rating="-10">DES is deprecated. See https://en.wikipedia.org/wiki/Data_Encryption_Standard#Brute_force_attack</BulkCipher>
-      <BulkCipher name="3DES-EDE-CBC" rating="0">3DES is still secure but slow. See http://security.stackexchange.com/questions/26179/security-comparsion-of-3des-and-aes</BulkCipher>
-      <BulkCipher name="DES-CBC3" rating="0">3DES is still secure but slow. See http://security.stackexchange.com/questions/26179/security-comparsion-of-3des-and-aes</BulkCipher>
-      <BulkCipher name="IDEA-CBC" rating="-5">Rarely used, thus not recommended. See https://tools.ietf.org/html/rfc5469</BulkCipher>
+      <BulkCipher name="CAMELLIA128" rating="0">Camellia is probably better than AES but not so extensively investigated, therefore rated as equal as AES. <![CDATA[<a href="https://en.wikipedia.org/wiki/Camellia_%28cipher%29" target="_newtab">Reference</a>]]></BulkCipher>
+      <BulkCipher name="CAMELLIA256" rating="2">Camellia is probably better than AES but not so extensively investigated, therefore rated as equal as AES. <![CDATA[<a href="https://en.wikipedia.org/wiki/Camellia_%28cipher%29" target="_newtab">Reference</a>]]></BulkCipher>
+      <BulkCipher name="DES" rating="-10">DES is deprecated. <![CDATA[<a href="https://en.wikipedia.org/wiki/Data_Encryption_Standard#Brute_force_attack" target="_newtab">Reference</a>]]></BulkCipher>
+      <BulkCipher name="DES-CBC" rating="-10">DES is deprecated. <![CDATA[<a href="https://en.wikipedia.org/wiki/Data_Encryption_Standard#Brute_force_attack" target="_newtab">Reference</a>]]></BulkCipher>
+      <BulkCipher name="3DES-EDE-CBC" rating="0">3DES is still secure but slow. <![CDATA[<a href="http://security.stackexchange.com/questions/26179/security-comparsion-of-3des-and-aes" target="_newtab">Reference</a>]]></BulkCipher>
+      <BulkCipher name="DES-CBC3" rating="0">3DES is still secure but slow. <![CDATA[<a href="http://security.stackexchange.com/questions/26179/security-comparsion-of-3des-and-aes" target="_newtab">Reference</a>]]></BulkCipher>
+      <BulkCipher name="IDEA-CBC" rating="-5">Rarely used, thus not recommended. <![CDATA[<a href="https://tools.ietf.org/html/rfc5469" target="_newtab">Reference</a>]]></BulkCipher>
       <BulkCipher name="RC2-CBC" rating="-10">RC2 is deprecated.</BulkCipher>
-      <BulkCipher name="RC4" rating="-8">RC4 has serious vulnerabilities. See https://en.wikipedia.org/wiki/RC4#Security</BulkCipher>
-      <BulkCipher name="SEED" rating="-1">SEED has no known vulnerabilities, but is not well studied. http://crypto.stackexchange.com/questions/11404/cryptanalysis-and-weaknesses-of-seed-cipher</BulkCipher>
+      <BulkCipher name="RC4" rating="-8">RC4 has serious vulnerabilities. <![CDATA[<a href="https://en.wikipedia.org/wiki/RC4#Security" target="_newtab">Reference</a>]]></BulkCipher>
+      <BulkCipher name="SEED" rating="-1">SEED has no known vulnerabilities, but is not well studied. <![CDATA[<a href="http://crypto.stackexchange.com/questions/11404/cryptanalysis-and-weaknesses-of-seed-cipher" target="_newtab">Reference</a>]]></BulkCipher>
     </BulkCiphers>
-
-    <BitsOfBulkCiphers>
-      <BitsOfBulkCipher name="0" rating="-100">blaa</BitsOfBulkCipher>
-      <BitsOfBulkCipher name="40" rating="-10">blaa</BitsOfBulkCipher>
-      <BitsOfBulkCipher name="56" rating="-5">blaa</BitsOfBulkCipher>
-      <BitsOfBulkCipher name="128" rating="0">blaa</BitsOfBulkCipher>
-      <BitsOfBulkCipher name="168" rating="2">blaa</BitsOfBulkCipher>
-      <BitsOfBulkCipher name="256" rating="5">blaa</BitsOfBulkCipher>
-    </BitsOfBulkCiphers>
       
     <Hashes>
       <Hash name="NULL" rating="-10">No signature is the worst option</Hash>
-      <Hash name="MD5" rating="-10">MD5 is deprecated. See https://en.wikipedia.org/wiki/MD5#Security</Hash>
-      <Hash name="SHA" rating="-4">SHA1 has known weaknesses. See https://en.wikipedia.org/wiki/SHA-1#Cryptanalysis_and_validation</Hash>
+      <Hash name="MD5" rating="-10">MD5 is deprecated. <![CDATA[<a href="https://en.wikipedia.org/wiki/MD5#Security" target="_newtab">Reference</a>]]></Hash>
+      <Hash name="SHA" rating="-4">SHA1 has known weaknesses. <![CDATA[<a href="https://en.wikipedia.org/wiki/SHA-1#Cryptanalysis_and_validation" target="_newtab">Reference</a>]]></Hash>
       <Hash name="SHA256" rating="0">Standard.</Hash>
       <Hash name="SHA384" rating="3">Better than SHA256.</Hash>
     </Hashes>
     
     <TlsVersions>
-      <TlsVersion name="SSLv2" rating="-10">Deprecated, don't use. See https://en.wikipedia.org/wiki/Transport_Layer_Security</TlsVersion>
-      <TlsVersion name="SSLv3" rating="-3">SSLv3 has known vulnerabilities. See https://en.wikipedia.org/wiki/Transport_Layer_Security</TlsVersion>
-      <TlsVersion name="TLSv1" rating="-2">Vulnerable to CBC attack. See https://en.wikipedia.org/wiki/Transport_Layer_Security</TlsVersion>
-      <TlsVersion name="TLSv1_1" rating="-1">Still compatible with SSL. See https://en.wikipedia.org/wiki/Transport_Layer_Security</TlsVersion>
-      <TlsVersion name="TLSv1_2" rating="0">Standard. See https://en.wikipedia.org/wiki/Transport_Layer_Security</TlsVersion>
+      <TlsVersion name="SSLv2" rating="-10">Deprecated, don't use. <![CDATA[<a href="https://en.wikipedia.org/wiki/Transport_Layer_Security" target="_newtab">Reference</a>]]></TlsVersion>
+      <TlsVersion name="SSLv3" rating="-3">SSLv3 has known vulnerabilities. <![CDATA[<a href="https://en.wikipedia.org/wiki/Transport_Layer_Security" target="_newtab">Reference</a>]]></TlsVersion>
+      <TlsVersion name="TLSv1" rating="-2">Vulnerable to CBC attack. <![CDATA[<a href="https://en.wikipedia.org/wiki/Transport_Layer_Security" target="_newtab">Reference</a>]]></TlsVersion>
+      <TlsVersion name="TLSv1_1" rating="-1">Still compatible with SSL. <![CDATA[<a href="https://en.wikipedia.org/wiki/Transport_Layer_Security" target="_newtab">Reference</a>]]></TlsVersion>
+      <TlsVersion name="TLSv1_2" rating="0">Standard. <![CDATA[<a href="https://en.wikipedia.org/wiki/Transport_Layer_Security" target="_newtab">Reference</a>]]></TlsVersion>
     </TlsVersions>
     
     <References>

@@ -14,17 +14,15 @@ public class CipherSuiteRatingRepository {
 
   private static final CipherSuiteRatingRepository _instance = new CipherSuiteRatingRepository();
   private static Map<String, SslRating> handshakeRatings;
-  private static Map<String, SslRating> cipherRatings;
+  private static Map<String, SslRating> bulkCipherRatings;
   private static Map<String, SslRating> hashRatings;
-  private static Map<String, SslRating> bitsOfBulkCipherRatings;
   private static Map<String, SslRating> tlsVersionRatings;
   private static SslRating previous;
   
   private CipherSuiteRatingRepository() {
     handshakeRatings        = new HashMap<String, SslRating>();
-    cipherRatings           = new HashMap<String, SslRating>();
+    bulkCipherRatings           = new HashMap<String, SslRating>();
     hashRatings             = new HashMap<String, SslRating>();
-    bitsOfBulkCipherRatings = new HashMap<String, SslRating>();
     tlsVersionRatings       = new HashMap<String, SslRating>();
   }
   
@@ -42,11 +40,11 @@ public class CipherSuiteRatingRepository {
     }
   }
 
-  public synchronized void addCipherRating(String name, SslRating rating) {
-    if (!cipherRatings.containsKey(name))
-      cipherRatings.put(name, rating);
-    else if (cipherRatings.get(name).getValue() != rating.getValue()) {
-      previous = cipherRatings.put(name, rating);
+  public synchronized void addBulkCipherRating(String name, SslRating rating) {
+    if (!bulkCipherRatings.containsKey(name))
+      bulkCipherRatings.put(name, rating);
+    else if (bulkCipherRatings.get(name).getValue() != rating.getValue()) {
+      previous = bulkCipherRatings.put(name, rating);
       System.out.println("Overwritten Cipher-Rating " + name + ": " 
           + previous.getValue() + "  with new Rating: " + rating.getValue());
     }
@@ -58,16 +56,6 @@ public class CipherSuiteRatingRepository {
     else if (hashRatings.get(name).getValue() != rating.getValue()) {
       previous = hashRatings.put(name, rating);
       System.out.println("Overwritten Hash-Rating " + name + ": " 
-          + previous.getValue() + "  with new Rating: " + rating.getValue());
-    }
-  }
-  
-  public synchronized void addBitsOfBulkCipherRating(String name, SslRating rating) {
-    if (!bitsOfBulkCipherRatings.containsKey(name))
-      bitsOfBulkCipherRatings.put(name, rating);
-    else if (bitsOfBulkCipherRatings.get(name).getValue() != rating.getValue()) {
-      previous = bitsOfBulkCipherRatings.put(name, rating);
-      System.out.println("Overwritten Bits-of-BulkCipher-Rating " + name + ": " 
           + previous.getValue() + "  with new Rating: " + rating.getValue());
     }
   }
@@ -110,7 +98,7 @@ public class CipherSuiteRatingRepository {
     
     // get the rating for the handshake, bulk cipher and hash method of the CipherSuite
     SslRating handshake = parseSubStrings(handshakeRatings, subStrings);
-    SslRating cipher    = parseSubStrings(cipherRatings, subStrings);
+    SslRating cipher    = parseSubStrings(bulkCipherRatings, subStrings);
     SslRating hash      = parseSubStrings(hashRatings, subStrings);
 
     if (!subStrings.isEmpty())
@@ -121,7 +109,7 @@ public class CipherSuiteRatingRepository {
     if (handshake == null)
       handshake = handshakeRatings.get("NULL");
     if (cipher == null)
-      cipher = cipherRatings.get("NULL");
+      cipher = bulkCipherRatings.get("NULL");
     if (hash == null)
       hash = hashRatings.get("NULL");
     
@@ -133,24 +121,22 @@ public class CipherSuiteRatingRepository {
     
     // get the rating for the tls version and for the amount of bits used for the encryption of bulk ciphers
     SslRating tlsVersion = tlsVersionRatings.get(cs.getTlsVersion());
-    SslRating bitsOfBulkCipher = bitsOfBulkCipherRatings.get(Integer.toString(cs.getBits()));
     
     if (tlsVersion == null)
       throw new NotFoundException("The following tls version could not be parsed: " + 
                                   cs.getTlsVersion() + "! Please update the corresponding xml-file.");
-    else if (bitsOfBulkCipher == null)
-      throw new NotFoundException("The following amount of bits for the bulk cipher could not be parsed: " +
-                                  cs.getBits() + "! Please update the corresponding xml-file.");
     
     // finally calculate the rating for the whole CipherSuite
-    double finalValue = handshake.getValue() + (cipher.getValue()+bitsOfBulkCipher.getValue())*0.7 + 
+    double finalValue = handshake.getValue() + cipher.getValue()*0.7 + 
                         hash.getValue()*0.3 + tlsVersion.getValue();
     
-    String description = handshake.getDescription() + "." + cipher.getDescription() + "." + 
-                         hash.getDescription() + "." + bitsOfBulkCipher.getDescription() + "." + 
-                         tlsVersion.getDescription();
+    SslRating finalRating = new SslRating(finalValue, cs, "");
+    finalRating.setDescriptionHandshake(handshake.getDescriptionDefault());
+    finalRating.setDescriptionBulkCipher(cipher.getDescriptionDefault());
+    finalRating.setDescriptionHash(hash.getDescriptionDefault());
+    finalRating.setDescriptionTlsVersion(tlsVersion.getDescriptionDefault());
     
-    return new SslRating(finalValue, cs, description);
+    return finalRating;
   }
   
   private SslRating parseSubStrings(Map<String, SslRating> mapToCheck, List<String> subStrings)

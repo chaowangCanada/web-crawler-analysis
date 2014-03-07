@@ -13,9 +13,8 @@ public class ComparatorMapStringSslRating implements Comparator<String>{
   @Override
   public int compare(String a, String b) {
     if (base.get(a).getValue() >= base.get(b).getValue())
-      return 1;
-    else
       return -1;
-      // returning 0 would merge keys --> TODO: really?
+    else
+      return 1;
   }
 }

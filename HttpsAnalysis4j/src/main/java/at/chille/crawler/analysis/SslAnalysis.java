@@ -49,9 +49,8 @@ public class SslAnalysis
   
   private Map<String, ArrayList<HostSslInfoWithRating>> hostSslInfoToAnalyze = null;
   private Map<String, ArrayList<HostSslInfoWithRating>> hostSslInfoSorted    = null;
-  private Map<String, SslRating> cipherSuites = null;
+  private Map<String, SslRating> cipherSuitesPlain = null;
   private Map<String, SslRating> cipherSuitesSorted = null;
-  private ComparatorMapStringHostSslInfoWithRating ratingValueComparator = null;
 
   //-----------------------------CONSTANTS-----------------------------
   private String plainFolder = "ssl-export";
@@ -79,10 +78,11 @@ public class SslAnalysis
     DatabaseManager.getInstance().loadLastRecentHostSslInfos();
     setHostSslInfos();
     
+    cipherSuitesPlain = new HashMap<String, SslRating>();
+    
     if (firstRun)
       return updateCipherSuiteRating();
     
-    cipherSuites = new HashMap<String, SslRating>();
     return 0;
   }
   
@@ -150,6 +150,14 @@ public class SslAnalysis
       index.write("    </header>");
       index.newLine();
       
+      index.write("    <div class=menu>");
+      index.newLine();
+      index.write("      <div class=entry><a href=\"javascript:displayDetailledInfo('"
+          + hostDataFolder + "/" + ciperSuiteDataName + "');\">List of all ciphersuites</a></div>");
+      index.newLine();
+      index.write("    </div>");
+      index.newLine();
+      
       index.write("    <section>");
       index.newLine();
       index.write("      <ol class=\"top-3-hosts\">");
@@ -178,8 +186,8 @@ public class SslAnalysis
       for (Map.Entry<String, ArrayList<HostSslInfoWithRating>> e : hostSslInfoSorted.entrySet()) {
         index.write("        <li>" + e.getKey().trim());
         index.write("<dl><dt>- Rating: " + e.getValue().get(0).getOverallRating() + "</dt>");
-        index.write("<dt><a href=\"javascript:document.getElementById('HostInfo').setAttribute('src',"
-            + "'"+hostDataFolder+"/"+e.getKey().trim()+".html');\">- More info </a></dt></dl>");
+        index.write("<dt><a href=\"javascript:displayDetailledInfo('"+hostDataFolder+"/"+e.getKey().trim()+
+            ".html');\">- More info </a></dt></dl>");
         index.write("</li>");
         index.newLine();
         
@@ -205,8 +213,13 @@ public class SslAnalysis
       index.newLine();
       index.write("    <aside>");
       index.newLine();
-      index.write("      <iframe id=\"HostInfo\" src=\"data/" + 
+      index.write("      <iframe id=\"DetailledInfo\" src=\"data/" + 
           hostSslInfoSorted.entrySet().iterator().next().getKey().trim() + ".html\"></iframe> ");
+      index.newLine();
+      index.write("      <script>");
+      index.newLine();
+      createJavascriptSection(index, "        ");
+      index.write("      </script>");
       index.newLine();
       index.write("    </aside>");
       index.newLine();
@@ -235,6 +248,17 @@ public class SslAnalysis
     return 0;
   }
   
+  private void createJavascriptSection(BufferedWriter index, String indentation) throws Exception {
+    index.write(indentation);
+    index.write("function displayDetailledInfo(dataFile) {");
+    index.newLine();
+    index.write(indentation);
+    index.write("  document.getElementById('DetailledInfo').setAttribute('src',dataFile);");
+    index.newLine();
+    index.write(indentation);
+    index.write("}");
+  }
+
   private void createCipherSuiteData() throws Exception {
     String currentHostDataFolder = currentFolder + hostDataFolder + "/";
     File file = new File(currentHostDataFolder);
@@ -260,7 +284,37 @@ public class SslAnalysis
     index.write("  <body>");
     index.newLine();
     
+    index.write("    <div class=\"CipherSuiteData\">");
+    index.newLine();
+    index.write("      <div id=\"Title\" >List of all ciphersuites</div>");
+    index.newLine();
+    index.write("      <div id=\"Time\">" + getCurrentDate(true) + "</div>");
+    index.newLine();
     
+    for (Map.Entry<String, SslRating> e : cipherSuitesSorted.entrySet()) {
+      index.write("      <div class=\"CipherSuite\"><div id=\"Name\">" + e.getKey() + "</div>"
+          + "<div id=\"Rating\">");
+      double rating = new BigDecimal(e.getValue().getValue()).setScale(2, RoundingMode.HALF_UP).
+          doubleValue();
+      index.write(rating + "</div>");
+      index.newLine();
+      index.write("        <div class=\"CipherSuiteDescription\"><div id=\"Type\">Handshake</div>"
+          + "<div id=\"Content\">" + e.getValue().getDescriptionHandshake() + "</div></div>");
+      index.newLine();
+      index.write("        <div class=\"CipherSuiteDescription\"><div id=\"Type\">Bulk Cipher</div>"
+          + "<div id=\"Content\">" + e.getValue().getDescriptionBulkCipher() + "</div></div>");
+      index.newLine();
+      index.write("        <div class=\"CipherSuiteDescription\"><div id=\"Type\">Hash</div>"
+          + "<div id=\"Content\">" + e.getValue().getDescriptionHash() + "</div></div>");
+      index.newLine();
+      index.write("        <div class=\"CipherSuiteDescription\"><div id=\"Type\">TLS-Version</div>"
+          + "<div id=\"Content\">" + e.getValue().getDescriptionTlsVersion() + "</div></div>");
+      index.newLine();
+      index.write("      </div>");
+      index.newLine();
+    }
+    index.write("    </div>"); // CipherSuiteData
+    index.newLine();
     
     index.write("  </body>");
     index.newLine();
@@ -323,10 +377,23 @@ public class SslAnalysis
               + sr.getCipherSuite().getBits() + "bits</div>");
           double rating = new BigDecimal(sr.getValue()).setScale(2, RoundingMode.HALF_UP).doubleValue();
           index.write("<div id=\"Rating\">");
-          if (rating >= 0)
-            index.write(" ");
           index.write(rating + "</div>");
-          index.write("</div>");
+          index.newLine();
+          
+          index.write("            <div class=\"CipherSuiteDescription\"><div id=\"Type\">Handshake</div>"
+              + "<div id=\"Content\">" + sr.getDescriptionHandshake() + "</div></div>");
+          index.newLine();
+          index.write("            <div class=\"CipherSuiteDescription\"><div id=\"Type\">Bulk Cipher</div>"
+              + "<div id=\"Content\">" + sr.getDescriptionBulkCipher() + "</div></div>");
+          index.newLine();
+          index.write("            <div class=\"CipherSuiteDescription\"><div id=\"Type\">Hash</div"
+              + "><div id=\"Content\">" + sr.getDescriptionHash() + "</div></div>");
+          index.newLine();
+          index.write("            <div class=\"CipherSuiteDescription\"><div id=\"Type\">TLS-Version</div>"
+              + "<div id=\"Content\">" + sr.getDescriptionTlsVersion() + "</div></div>");
+          index.newLine();
+          
+          index.write("          </div>"); // end Cipher
           index.newLine();
         }
         index.write("        </div>"); // end CipherList
@@ -343,10 +410,23 @@ public class SslAnalysis
               + sr.getCipherSuite().getBits() + "bits</div>");
           double rating = new BigDecimal(sr.getValue()).setScale(2, RoundingMode.HALF_UP).doubleValue();
           index.write("<div id=\"Rating\">");
-          if (rating >= 0)
-            index.write(" ");
           index.write(rating + "</div>");
-          index.write("</div>");
+          index.newLine();
+          
+          index.write("            <div class=\"CipherSuiteDescription\"><div id=\"Type\">Handshake</div>"
+              + "<div id=\"Content\">" + sr.getDescriptionHandshake() + "</div></div>");
+          index.newLine();
+          index.write("            <div class=\"CipherSuiteDescription\"><div id=\"Type\">Bulk Cipher</div>"
+              + "<div id=\"Content\">" + sr.getDescriptionBulkCipher() + "</div></div>");
+          index.newLine();
+          index.write("            <div class=\"CipherSuiteDescription\"><div id=\"Type\">Hash</div"
+              + "><div id=\"Content\">" + sr.getDescriptionHash() + "</div></div>");
+          index.newLine();
+          index.write("            <div class=\"CipherSuiteDescription\"><div id=\"Type\">TLS-Version</div>"
+              + "<div id=\"Content\">" + sr.getDescriptionTlsVersion() + "</div></div>");
+          index.newLine();
+          
+          index.write("          </div>"); // end Cipher
           index.newLine();
         }
         index.write("        </div>"); // end CipherList
@@ -380,7 +460,7 @@ public class SslAnalysis
     index.write("header {");
     index.newLine();
     index.write("  background: linear-gradient(black, red, red, white, red, red, black); ");
-    index.write("text-align:center; color: black;}");
+    index.write("text-align:center; color: white;}");
     index.newLine();
     
     index.write("body { \n  background: steelblue; }");
@@ -392,16 +472,20 @@ public class SslAnalysis
     index.newLine();
     index.write("aside {");
     index.newLine();
-    index.write("   float: right; }");
+    index.write("  float: right; }");
+    index.newLine();
+    //-------------------------------------
+    //---------Style of ordered list-------
+    index.write(" ol {");
+    index.newLine();
+    index.write("  border:solid; color: white; display: block; }");
+    index.newLine();
+
+    index.write("li { ");
+    index.newLine();
+    index.write("  margin-left: 30px; }");
     index.newLine();
     
-    index.write("ol.top-3-hosts { \n  color: white; }");
-    index.newLine();
-    
-    index.write("ol.other-hosts{");
-    index.newLine();
-    index.write("  display: block; background: white; }");
-    index.newLine();
     index.write("ol.other-hosts li > dl {");
     index.newLine();
     index.write("  display: none; }");
@@ -410,10 +494,11 @@ public class SslAnalysis
     index.newLine();
     index.write("  display: block; }");
     index.newLine();
-    
-    index.write("iframe { position:absolute; right:0px; width: 60%; height: 100%; border: none; }");
+    index.write("iframe { position:absolute; right:0px; bottom:10px; width: 60%; "
+        + "height: 80%; border: none; }");
     index.newLine();
-    
+    //-------------------------------------
+    //-------------Style of HostData-------
     index.write("#Title {");
     index.write("  font-weight:bold; }");
     index.newLine();
@@ -421,6 +506,11 @@ public class SslAnalysis
     index.write(".HostSslInfo #Title {");
     index.newLine();
     index.write("  min-height: 40px; color:blue; }");
+    index.newLine();
+    
+    index.write(".Crawl {");
+    index.newLine();
+    index.write("  color: white;}");
     index.newLine();
     
     index.write(".Crawl #Time {");
@@ -440,6 +530,11 @@ public class SslAnalysis
 
     index.write(".CipherList .Cipher {");
     index.newLine();
+    index.write("  display: none; color: white; }");
+    index.newLine();
+    
+    index.write(".CipherSuiteDescription {");
+    index.newLine();
     index.write("  display: none; color: black; }");
     index.newLine();
     
@@ -448,7 +543,12 @@ public class SslAnalysis
     index.write("  display: block; }");
     index.newLine();
     
-    index.write(".CipherList .Cipher:hover {");
+    index.write(".Cipher:hover .CipherSuiteDescription {");
+    index.newLine();
+    index.write("  display: block; }");
+    index.newLine();
+    
+    index.write(".Cipher .CipherSuiteDescription:hover {");
     index.newLine();
     index.write("  color: blue; }");
     index.newLine();
@@ -462,6 +562,57 @@ public class SslAnalysis
     index.newLine();
     index.write("  float:right; width:10%; }");
     index.newLine();
+    //-------------------------------------
+    //------Style of CipherSuiteData-------
+    index.write(".CipherSuite {");
+    index.newLine();
+    index.write("float:left; width: 100%; color: white;}");
+    index.newLine();
+      
+    index.write(".CipherSuite .CipherSuiteDescription {");
+    index.newLine();
+    index.write("display: none; }");
+    index.newLine();
+      
+    index.write(".CipherSuite:hover .CipherSuiteDescription {");
+    index.newLine();
+    index.write("display: block; }");
+    index.newLine();
+      
+    index.write(".CipherSuite .CipherSuiteDescription:hover {");
+    index.newLine();
+    index.write("color: blue; }");
+    index.newLine();
+      
+    index.write(".CipherSuiteData #Title{");
+    index.newLine();
+    index.write("float:left; width:80%; font-weight:bold; min-height: 40px; }");
+    index.newLine();
+
+    index.write(".CipherSuiteData #Time{");
+    index.newLine();
+    index.write("float:right; width:20%; }");
+    index.newLine();
+
+    index.write(".CipherSuiteData #Name {");
+    index.newLine();
+    index.write("float:left; width:90%; }");
+    index.newLine();
+    
+    index.write(".CipherSuiteData #Rating {");
+    index.newLine();
+    index.write("float:right; width:10%; }");
+    index.newLine();
+    
+    index.write(".CipherSuiteDescription #Type {");
+    index.newLine();
+    index.write("float:left; width:15%; }");
+    index.newLine();
+    index.write(".CipherSuiteDescription #Content {");
+    index.newLine();
+    index.write("float:right; width:85%; }");
+    index.newLine();
+    //-------------------------------------
     
     index.close();
     fw.close();
@@ -472,8 +623,13 @@ public class SslAnalysis
    * 
    * @return Date
    */
-  private String getCurrentDate() {
-    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+  private String getCurrentDate(boolean forReport) {
+    DateFormat dateFormat;
+    if (forReport)
+      dateFormat = new SimpleDateFormat("MMM. dd, yyyy");
+    else
+      dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+    
     //get current date time with Date()
     Date date = new Date();
     return dateFormat.format(date);
@@ -492,7 +648,7 @@ public class SslAnalysis
    * @return none
    */
   private void createOutputFolder() {
-    currentFolder = "./" + plainFolder + "." + getCurrentDate() + "/";
+    currentFolder = "./" + plainFolder + "." + getCurrentDate(false) + "/";
     
     File file = new File(currentFolder);
     long count = 1;
@@ -555,7 +711,7 @@ public class SslAnalysis
           hostSslInfoToAnalyze.get(hsi.getHostSslName()).get(0).addFailed(hsi.getFailed());
           hostSslInfoToAnalyze.get(hsi.getHostSslName()).get(0).addPreferred(hsi.getPreferred());
           hostSslInfoToAnalyze.get(hsi.getHostSslName()).get(0).addRejected(hsi.getRejected());
-          out.println("merged host " + hsi.getHostSslName());
+          //out.println("merged host " + hsi.getHostSslName());
         }
         else
           hostSslInfoToAnalyze.get(hsi.getHostSslName()).add(new HostSslInfoWithRating(hsi));
@@ -590,6 +746,7 @@ public class SslAnalysis
     long calculationCount = 0;
     Set<String> acceptedEmpty  = new HashSet<String>();
     Set<String> preferredEmpty = new HashSet<String>();
+    SslRating tmpRating;
     try {
       //iterate over all hosts in the map
       for (Map.Entry<String, ArrayList<HostSslInfoWithRating>> entry : hostSslInfoToAnalyze.entrySet()) {
@@ -597,13 +754,19 @@ public class SslAnalysis
         for (HostSslInfoWithRating hsiwr : entry.getValue()) {
           // get the Cipher-Rating for accepted and store it in HostSslInfoWithRating
           for (CipherSuite cs : hsiwr.getAccepted()) {
-            hsiwr.addSslRatingToSecurityRatingsAccepted(CipherSuiteRatingRepository.getInstance().
-                getCipherRating(cs));
+            tmpRating = CipherSuiteRatingRepository.getInstance().getCipherRating(cs);
+            hsiwr.addSslRatingToSecurityRatingsAccepted(tmpRating);
+            String csName = cs.getTlsVersion() + "__" + cs.getCipherSuite().replace("-", "_") + "__"
+                            + cs.getBits() + "bits";
+            cipherSuitesPlain.put(csName , tmpRating);
           }
           // get the Cipher-Rating for preferred and store it in HostSslInfoWithRating
           for (CipherSuite cs : hsiwr.getPreferred()) {
-            hsiwr.addSslRatingToSecurityRatingsPreferred(CipherSuiteRatingRepository.getInstance().
-                getCipherRating(cs));
+            tmpRating = CipherSuiteRatingRepository.getInstance().getCipherRating(cs);
+            hsiwr.addSslRatingToSecurityRatingsPreferred(tmpRating);
+            String csName = cs.getTlsVersion() + "__" + cs.getCipherSuite().replace("-", "_") + "__"
+                + cs.getBits() + "bits";
+             cipherSuitesPlain.put(csName , tmpRating);
           }
           // now calcualte the overall rating for every HostSslInfoWithRating per host
           calculationCount++;
@@ -624,11 +787,19 @@ public class SslAnalysis
       //printWarningEmpty("accepted", acceptedEmpty);
       //printWarningEmpty("preferred", preferredEmpty);
       
-      // now sort the hosts in the map --> TODO: sort during insert would increase performance
-      ratingValueComparator = new ComparatorMapStringHostSslInfoWithRating(hostSslInfoToAnalyze);
+      // sort the hosts in the map
+      ComparatorMapStringHostSslInfoWithRating ratingValueComparator = 
+          new ComparatorMapStringHostSslInfoWithRating(hostSslInfoToAnalyze);
       hostSslInfoSorted = new TreeMap<String, ArrayList<HostSslInfoWithRating>>(ratingValueComparator);
       hostSslInfoSorted.putAll(hostSslInfoToAnalyze);
       hostSslInfoToAnalyze.clear();
+      
+      // sort the ciphers in the map for ciphersuites
+      ComparatorMapStringSslRating sslRatingComparator = 
+          new ComparatorMapStringSslRating(cipherSuitesPlain);
+      cipherSuitesSorted = new TreeMap<String, SslRating>(sslRatingComparator);
+      cipherSuitesSorted.putAll(cipherSuitesPlain);
+      cipherSuitesPlain.clear();
       
     } catch (Exception e) {
         System.out.println(e.getMessage());
@@ -645,7 +816,7 @@ public class SslAnalysis
     while (it.hasNext()) {
       SslRating r = it.next();
       out.println("Output of " + typeOfSet + ": Value is " + r.getValue() + ", "
-          + "CipherSuite is " + r.getCipherSuite().getCipherSuite() + " and Description is: " + r.getDescription());
+          + "CipherSuite is " + r.getCipherSuite().getCipherSuite() + " and Description is: " + r.getDescriptionDefault());
     }
   }
   
@@ -740,6 +911,7 @@ public class SslAnalysis
     while (time < 0)
     {
       try {
+        out.println("Amount of hours to merge older crawls of a host with the newest one (in hours): ");
         time = Long.parseLong(console.readLine());
       } 
       catch (Exception e) {
