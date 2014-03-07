@@ -1,0 +1,69 @@
+sslscan (1.8.2-2) unstable; urgency=low
+
+  * debian/control:
+    - Updated Homepage (Closes: #633456)
+    - Updated Standards-Version to 3.9.2
+  * Fixed FTBFS with ld --as-needed (Closes: #639013)
+  * Fixed FTBFS undefined reference to SSLv2_client_method (Closes: #622019)
+  * debian/rules:
+    - Added build-arch build-indep targets
+    - Substituded dh_clean with dh_prep in install target
+
+ -- Marvin Stark <marv@der-marv.de>  Thu, 22 Dec 2011 15:29:19 +0000
+
+sslscan (1.8.2-1) unstable; urgency=low
+
+  * New Upstream release 
+  * debian/control:
+    - updated Standards-Version to 3.8.3
+  * Fixed FTBFS with binutils-gold (Closes: #556372) 
+  * Fixed spelling errors in sslscan.c
+  * Added patch descriptions
+
+ -- Marvin Stark <marv@der-marv.de>  Mon, 25 Jan 2010 19:28:33 +0100
+
+sslscan (1.8.0-1) unstable; urgency=low
+
+  * New Upstream Version
+    - Added SSL implementation workaround option
+    - Added HTTP connection testing
+    - Fixed Certification validation XML output
+  * debian/control:
+    - Updated Standards-Version to 3.8.1
+
+ -- Marvin Stark <marv@der-marv.de>  Sun, 24 May 2009 11:47:24 +0200
+
+sslscan (1.7.1-1) unstable; urgency=low
+
+  * New Upstream Version
+  * Added debian/watch 
+
+ -- Marvin Stark <marv@der-marv.de>  Fri, 11 Jul 2008 10:51:30 +0200
+
+sslscan (1.7-1) unstable; urgency=low
+
+  * New Upstream Version
+  * debian/control:
+    - Standards-Version changed to 3.8.0
+  * debian/copyright:
+    - Updated copyright years
+
+ -- Marvin Stark <marv@der-marv.de>  Fri, 11 Jul 2008 10:32:01 +0200
+
+sslscan (1.6-1) unstable; urgency=low
+
+  * New upstream release
+    Improved certificate checking
+    Added Makefile
+    Added manpage
+  * Patched Makefile
+  * Added quilt as Build-Dependency
+
+ -- Marvin Stark <marv@der-marv.de>  Tue, 22 Jan 2008 07:49:35 +0000
+
+sslscan (1.5-1) unstable; urgency=low
+
+  * Initial release (Closes: #457217)
+
+ -- Marvin Stark <marv@der-marv.de>  Thu, 20 Dec 2007 13:36:43 +0000
+
