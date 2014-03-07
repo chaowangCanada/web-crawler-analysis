@@ -22,8 +22,7 @@ public class XmlCipherSuiteContentHandler extends DefaultHandler {
 		try {
 			content = "";
 			if (qName.equals("Handshake") || qName.equals("BulkCipher")
-					|| qName.equals("Hash") || qName.equals("BitsOfBulkCipher")
-					|| qName.equals("TlsVersion")) {
+					|| qName.equals("Hash") || qName.equals("TlsVersion")) {
 				name = attributes.getValue("name");
 				rating = Integer.parseInt(attributes.getValue("rating"));
 				if (name == null || rating == null) {
@@ -43,11 +42,9 @@ public class XmlCipherSuiteContentHandler extends DefaultHandler {
 			if (qName.equals("Handshake")) {
 				parseResult.addHandshakeRating(name, new SslRating(rating, content));
 			} else if (qName.equals("BulkCipher")) {
-				parseResult.addCipherRating(name, new SslRating(rating, content));
+				parseResult.addBulkCipherRating(name, new SslRating(rating, content));
 			} else if (qName.equals("Hash")) {
 				parseResult.addHashRating(name, new SslRating(rating, content));
-			} else if (qName.equals("BitsOfBulkCipher")) {
-        parseResult.addBitsOfBulkCipherRating(name, new SslRating(rating, content));
       } else if (qName.equals("TlsVersion")) {
         parseResult.addTlsVersionRating(name, new SslRating(rating, content));
       }

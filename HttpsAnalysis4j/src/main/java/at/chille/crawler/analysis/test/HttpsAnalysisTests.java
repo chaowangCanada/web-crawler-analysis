@@ -66,7 +66,7 @@ public class HttpsAnalysisTests {
 		  for (Map.Entry<String, SslRating> r : ratingList.entrySet()) {
 	      assertTrue(r != null);
 	      System.out.println("Output of TestRating: Value is " + r.getValue().getValue() + ", "
-	          + "Cipher is " + r.getKey() + " and Description is: " + r.getValue().getDescription());
+	          + "Cipher is " + r.getKey() + " and Description is: " + r.getValue().getDescriptionDefault());
 	    }
 		  
 		} catch (Exception e) {
