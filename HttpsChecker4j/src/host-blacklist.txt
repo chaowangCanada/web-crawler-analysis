@@ -1,5 +1,5 @@
 # This file contains a blacklist of hosts that are not scanned 
-# in HttpsChecker4j
+# in HttpsChecker4j. It can be used with HttpsCheckerController "blacklist" commandline option
 #
 # Hosts that match the following regexes are skipped
 # Each line may contain one regex
@@ -7,4 +7,9 @@
 #   http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html
 # 
 # Examples:
-# .*        Filter everything
+# .*            Filter everything
+# google\.at    Filter google.at
+# google.at     Filter google?at, i.e. {google.at, googleaat, google/at...}
+# .*at          Filter {at, .at, .cat, test.at...}
+# .*\.host\.at  Filter .host.at with all subdomains {www.host.at, www.test.host.at, test.host.at} but not host.at
+

@@ -40,24 +40,24 @@ public class HostSslInfo {
 	/**
 	 * CipherSuites that are supported by this host
 	 */
-//	@ManyToMany(fetch = FetchType.LAZY)
-	@ManyToMany(fetch = FetchType.EAGER)
+//	@ManyToMany(fetch = FetchType.LAZY)		//Use lazy fetching for HttpsChecker4j
+	@ManyToMany(fetch = FetchType.EAGER)	//Use eager fetching for HttpsAnalysis4j
 	@JoinTable(name = "CIPHER_ACC_ID")
 	private Set<CipherSuite> accepted;
 
 	/**
 	 * CipherSuites that are rejected by this host
 	 */
-	@ManyToMany(fetch = FetchType.EAGER)
-//	@ManyToMany(fetch = FetchType.LAZY)
+	//@ManyToMany(fetch = FetchType.LAZY)	//Use lazy fetching for HttpsChecker4j
+	@ManyToMany(fetch = FetchType.EAGER)	//Use eager fetching for HttpsAnalysis4j
 	@JoinTable(name = "CIPHER_REJ_ID")
 	private Set<CipherSuite> rejected;
 
 	/**
 	 * CipherSuites that are silently rejected by this host
 	 */
-	@ManyToMany(fetch = FetchType.EAGER)
-//	@ManyToMany(fetch = FetchType.LAZY)
+//	@ManyToMany(fetch = FetchType.LAZY)		//Use lazy fetching for HttpsChecker4j	
+	@ManyToMany(fetch = FetchType.EAGER)	//Use eager fetching for HttpsAnalysis4j
 	@JoinTable(name = "CIPHER_FAIL_ID")
 	private Set<CipherSuite> failed;
 
@@ -65,8 +65,8 @@ public class HostSslInfo {
 	 * CipherSuites that are preferred by this host if more than one CipherSuite
 	 * is offered by the client
 	 */
-//	@ManyToMany(fetch = FetchType.LAZY)
-	@ManyToMany(fetch = FetchType.EAGER)
+//	@ManyToMany(fetch = FetchType.LAZY)		//Use lazy fetching for HttpsChecker4j
+	@ManyToMany(fetch = FetchType.EAGER)	//Use eager fetching for HttpsAnalysis4j
 	@JoinTable(name = "CIPHER_PREF_ID")
 	private Set<CipherSuite> preferred;
 

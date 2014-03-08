@@ -72,3 +72,10 @@ http://www.avajava.com/tutorials/lessons/how-do-i-add-a-project-as-a-dependency-
 * e.g in ./crawler4j: mvn install
 * e.g in ./HttpCrawler4j/database: mvn eclipse:eclipse
 * e.g in ./Analysis: mvn eclipse:eclipse
+
+
+
+SSL-analysis
+============
+Based on HttpCrawler4j the crawling results can be used in conjunction with HttpsChecker4j and HttpsAnalysis4j to scan the crawled SSL-hosts regarding TLS-security. 
+See HttpsChecker4j and HttpsAnalysis4j Readmes for details.

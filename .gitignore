@@ -2,4 +2,7 @@
 /Analysis/export/*
 **/.project
 **/.classpath
+**/.settings
 
+/HttpsChecker4j/sslscan/*
+/HttpCrawler4j/testroot/*
