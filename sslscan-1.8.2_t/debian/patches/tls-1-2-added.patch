@@ -1,0 +1,425 @@
+fixed XML-output: certificate information put in CDATA section
+added TLSv1.1 and TLSv1.2
+added --timesleep flag
+Index: sslscan-1.8.2_t/sslscan.1
+===================================================================
+--- sslscan-1.8.2_t.orig/sslscan.1	2009-12-08 20:41:57.000000000 +0100
++++ sslscan-1.8.2_t/sslscan.1	2014-03-07 10:04:16.000000000 +0100
+@@ -42,6 +42,18 @@
+ .br
+ Only check SSLv3 ciphers.
+ .TP
++.B \-\-tls1
++.br
++Only check TLSv1.0 ciphers.
++.TP
++.B \-\-tls1_1
++.br
++Only check TLSv1.1 ciphers.
++.TP
++.B \-\-tls1_2
++.br
++Only check TLSv1.2 ciphers.
++.TP
+ .B \-\-pk=<file>
+ A file containing the private key or
+ a PKCS#12 file containing a private
+@@ -66,6 +78,10 @@
+ .B \-\-bugs
+ Enables workarounds for SSL bugs.
+ .TP
++.B \-\-timesleep=<msec>
++.br
++Wait msec after checking a cipher.
++.TP
+ .B \-\-xml=<file>
+ Output results to an XML file.
+ .br
+Index: sslscan-1.8.2_t/sslscan.c
+===================================================================
+--- sslscan-1.8.2_t.orig/sslscan.c	2009-12-08 20:41:57.000000000 +0100
++++ sslscan-1.8.2_t/sslscan.c	2014-02-27 15:43:47.000000000 +0100
+@@ -53,10 +53,12 @@
+ 
+ #define BUFFERSIZE 1024
+ 
+-#define ssl_all 0
+-#define ssl_v2 1
+-#define ssl_v3 2
+-#define tls_v1 3
++#define ssl_all  0
++#define ssl_v2   1
++#define ssl_v3   2
++#define tls_v1   3
++#define tls_v1_1 4
++#define tls_v1_2 5
+ 
+ // Colour Console Output...
+ #if !defined(__WIN32__)
+@@ -77,10 +79,10 @@
+                              "          / __/ __| / __|/ __/ _` | '_ \\\n"
+                              "          \\__ \\__ \\ \\__ \\ (_| (_| | | | |\n"
+                              "          |___/___/_|___/\\___\\__,_|_| |_|\n\n"
+-                             "                  Version 1.8.2\n"
++                             "                  Version 1.8.2_t\n"
+                              "             http://www.titania.co.uk\n"
+                              "        Copyright Ian Ventura-Whiting 2009\n";
+-const char *program_version = "sslscan version 1.8.2\nhttp://www.titania.co.uk\nCopyright (C) Ian Ventura-Whiting 2009\n";
++const char *program_version = "sslscan version 1.8.2_t\nhttp://www.titania.co.uk\nCopyright (C) Ian Ventura-Whiting 2009\n";
+ const char *xml_version = "1.8.2";
+ 
+ 
+@@ -107,10 +109,10 @@
+ 	int pout;
+ 	int sslbugs;
+ 	int http;
++    int timesleep;
+ 
+ 	// File Handles...
+ 	FILE *xmlOutput;
+-
+ 	// TCP Connection Variables...
+ 	struct hostent *hostStruct;
+ 	struct sockaddr_in serverAddress;
+@@ -563,6 +565,7 @@
+ 					}
+ 					if (options->xmlOutput != 0)
+ 						fprintf(options->xmlOutput, " sslversion=\"");
++#ifndef OPENSSL_NO_SSL2
+ 					if (sslCipherPointer->sslMethod == SSLv2_client_method())
+ 					{
+ 						if (options->xmlOutput != 0)
+@@ -572,7 +575,9 @@
+ 						else
+ 							printf("SSLv2  ");
+ 					}
+-					else if (sslCipherPointer->sslMethod == SSLv3_client_method())
++					else
++#endif
++					if (sslCipherPointer->sslMethod == SSLv3_client_method())
+ 					{
+ 						if (options->xmlOutput != 0)
+ 							fprintf(options->xmlOutput, "SSLv3\" bits=\"");
+@@ -581,7 +586,7 @@
+ 						else
+ 							printf("SSLv3  ");
+ 					}
+-					else
++					else if (sslCipherPointer->sslMethod == TLSv1_client_method())
+ 					{
+ 						if (options->xmlOutput != 0)
+ 							fprintf(options->xmlOutput, "TLSv1\" bits=\"");
+@@ -590,6 +595,34 @@
+ 						else
+ 							printf("TLSv1  ");
+ 					}
++                    else if (sslCipherPointer->sslMethod == TLSv1_1_client_method())
++                    {
++						if (options->xmlOutput != 0)
++							fprintf(options->xmlOutput, "TLSv1_1\" bits=\"");
++						if (options->pout == true)
++							printf("TLSv1_1 || ");
++						else
++							printf("TLSv1_1  ");
++					}
++                    else if (sslCipherPointer->sslMethod == TLSv1_2_client_method())
++                    {
++						if (options->xmlOutput != 0)
++							fprintf(options->xmlOutput, "TLSv1_2\" bits=\"");
++						if (options->pout == true)
++							printf("TLSv1_2 || ");
++						else
++							printf("TLSv1_2  ");
++					}
++                    else
++                    {
++						if (options->xmlOutput != 0)
++							fprintf(options->xmlOutput, "TLSv??\" bits=\"");
++						if (options->pout == true)
++							printf("TLSv?? || ");
++						else
++							printf("TLSv??  ");
++					}
++                      
+ 					if (sslCipherPointer->bits < 10)
+ 						tempInt = 2;
+ 					else if (sslCipherPointer->bits < 100)
+@@ -644,7 +677,7 @@
+ }
+ 
+ 
+-// Test for prefered ciphers
++// Test for preferred ciphers
+ int defaultCipher(struct sslCheckOptions *options, SSL_METHOD *sslMethod)
+ {
+ 	// Variables...
+@@ -688,6 +721,7 @@
+ 						cipherStatus = SSL_connect(ssl);
+ 						if (cipherStatus == 1)
+ 						{
++#ifndef OPENSSL_NO_SSL2
+ 							if (sslMethod == SSLv2_client_method())
+ 							{
+ 								if (options->xmlOutput != 0)
+@@ -697,7 +731,9 @@
+ 								else
+ 									printf("    SSLv2  ");
+ 							}
+-							else if (sslMethod == SSLv3_client_method())
++							else
++#endif
++							if (sslMethod == SSLv3_client_method())
+ 							{
+ 								if (options->xmlOutput != 0)
+ 									fprintf(options->xmlOutput, "  <defaultcipher sslversion=\"SSLv3\" bits=\"");
+@@ -706,7 +742,7 @@
+ 								else
+ 									printf("    SSLv3  ");
+ 							}
+-							else
++                            else if (sslMethod == TLSv1_client_method())
+ 							{
+ 								if (options->xmlOutput != 0)
+ 									fprintf(options->xmlOutput, "  <defaultcipher sslversion=\"TLSv1\" bits=\"");
+@@ -715,6 +751,34 @@
+ 								else
+ 									printf("    TLSv1  ");
+ 							}
++                            else if (sslMethod == TLSv1_1_client_method())
++                            {
++                                if (options->xmlOutput != 0)
++                                    fprintf(options->xmlOutput, "  <defaultcipher sslversion=\"TLSv1_1\" bits=\"");
++                                if (options->pout == true)
++                                    printf("||TLSv1_1|| ");
++                                else
++                                    printf("   TLSv1_1 ");
++                            }
++                            else if (sslMethod == TLSv1_2_client_method())
++                            {
++                                if (options->xmlOutput != 0)
++                                    fprintf(options->xmlOutput, "  <defaultcipher sslversion=\"TLSv1_2\" bits=\"");
++                                if (options->pout == true)
++                                    printf("||TLSv1_2|| ");
++                                else
++                                    printf("   TLSv1_2 ");
++                            }
++                            else
++                            {
++                                if (options->xmlOutput != 0)
++                                    fprintf(options->xmlOutput, "  <defaultcipher sslversion=\"TLSv??\" bits=\"");
++                                if (options->pout == true)
++                                    printf("|| TLSv??|| ");
++                                else
++                                    printf("    TLSv?? ");
++                            }
++					
+ 							if (SSL_get_cipher_bits(ssl, &tempInt2) < 10)
+ 								tempInt = 2;
+ 							else if (SSL_get_cipher_bits(ssl, &tempInt2) < 100)
+@@ -904,7 +968,7 @@
+ 									X509_NAME_oneline(X509_get_issuer_name(x509Cert), buffer, sizeof(buffer) - 1);
+ 									printf("    Issuer: %s\n", buffer);
+ 									if (options->xmlOutput != 0)
+-										fprintf(options->xmlOutput, "   <issuer>%s</issuer>\n", buffer);
++										fprintf(options->xmlOutput, "   <issuer><![CDATA[%s]]></issuer>\n", buffer);
+ 								}
+ 
+ 								// Validity...
+@@ -935,7 +999,7 @@
+ 									X509_NAME_oneline(X509_get_subject_name(x509Cert), buffer, sizeof(buffer) - 1);
+ 									printf("    Subject: %s\n", buffer);
+ 									if (options->xmlOutput != 0)
+-										fprintf(options->xmlOutput, "   <subject>%s</subject>\n", buffer);
++										fprintf(options->xmlOutput, "   <subject><![CDATA[%s]]></subject>\n", buffer);
+ 								}
+ 
+ 								// Public Key Algo...
+@@ -1030,7 +1094,7 @@
+ 											{
+ 												fprintf(options->xmlOutput, "    <extension name=\"");
+ 												i2a_ASN1_OBJECT(fileBIO, asn1Object);
+-												BIO_printf(fileBIO, "\"%s>", tempInt2 ? " level=\"critical\"" : "");
++												BIO_printf(fileBIO, "\"%s><![CDATA[", tempInt2 ? " level=\"critical\"" : "");
+ 											}
+ 
+ 											// Print Extension value...
+@@ -1043,7 +1107,7 @@
+ 											{
+ 												if (!X509V3_EXT_print(fileBIO, extension, X509_FLAG_COMPAT, 0))
+ 													M_ASN1_OCTET_STRING_print(fileBIO, extension->value);
+-												fprintf(options->xmlOutput, "</extension>\n");
++												fprintf(options->xmlOutput, "]]></extension>\n");
+ 											}
+ 											printf("\n");
+ 										}
+@@ -1171,6 +1235,8 @@
+ 
+ 			// Free CTX Object
+ 			SSL_CTX_free(options->ctx);
++            if(options->timesleep > 0)
++                usleep(1000*options->timesleep);
+ 		}
+ 	
+ 		// Error Creating Context Object
+@@ -1185,28 +1251,42 @@
+ 
+ 	if (status == true)
+ 	{
+-		// Test prefered ciphers...
++		// Test preferred ciphers...
+ 		printf("\n  %sPrefered Server Cipher(s):%s\n", COL_BLUE, RESET);
+ 		if (options->pout == true)
+ 			printf("|| Version || Bits || Cipher ||\n");
+ 		switch (options->sslVersion)
+ 		{
+ 			case ssl_all:
++#ifndef OPENSSL_NO_SSL2
+ 				status = defaultCipher(options, SSLv2_client_method());
+ 				if (status != false)
++#endif
+ 					status = defaultCipher(options, SSLv3_client_method());
+ 				if (status != false)
+ 					status = defaultCipher(options, TLSv1_client_method());
++                if (status != false)
++					status = defaultCipher(options, TLSv1_1_client_method());
++                if (status != false)
++					status = defaultCipher(options, TLSv1_2_client_method());
+ 				break;
++#ifndef OPENSSL_NO_SSL2
+ 			case ssl_v2:
+ 				status = defaultCipher(options, SSLv2_client_method());
+ 				break;
++#endif
+ 			case ssl_v3:
+ 				status = defaultCipher(options, SSLv3_client_method());
+ 				break;
+ 			case tls_v1:
+ 				status = defaultCipher(options, TLSv1_client_method());
+ 				break;
++            case tls_v1_1:
++				status = defaultCipher(options, TLSv1_1_client_method());
++				break;
++            case tls_v1_2:
++				status = defaultCipher(options, TLSv1_2_client_method());
++				break;
+ 		}
+ 	}
+ 
+@@ -1247,6 +1327,7 @@
+ 	options.starttls = false;
+ 	options.sslVersion = ssl_all;
+ 	options.pout = false;
++    options.timesleep = 0;
+ 	SSL_library_init();
+ 
+ 	// Get program parameters
+@@ -1306,10 +1387,18 @@
+ 		else if (strcmp("--ssl3", argv[argLoop]) == 0)
+ 			options.sslVersion = ssl_v3;
+ 
+-		// TLS v1 only...
++		// TLS v1.0 only...
+ 		else if (strcmp("--tls1", argv[argLoop]) == 0)
+ 			options.sslVersion = tls_v1;
+ 
++        // TLS v1.1 only...
++		else if (strcmp("--tls1_1", argv[argLoop]) == 0)
++			options.sslVersion = tls_v1_1;
++        
++        // TLS v1.2 only...
++		else if (strcmp("--tls1_2", argv[argLoop]) == 0)
++			options.sslVersion = tls_v1_2;
++        
+ 		// SSL Bugs...
+ 		else if (strcmp("--bugs", argv[argLoop]) == 0)
+ 			options.sslbugs = 1;
+@@ -1317,7 +1406,20 @@
+ 		// SSL HTTP Get...
+ 		else if (strcmp("--http", argv[argLoop]) == 0)
+ 			options.http = 1;
+-
++        
++        // Sleeping time between 2 connections
++        else if (strncmp("--timesleep=", argv[argLoop], 12) == 0)
++        {
++            if(strlen(argv[argLoop]) > 12)
++            {
++                options.timesleep = atoi(argv[argLoop]+12);
++                if(options.timesleep < 0)
++                    options.timesleep = 0;
++            }
++            else
++                mode = mode_help;
++        }
++        
+ 		// Host (maybe port too)...
+ 		else if (argLoop + 1 == argc)
+ 		{
+@@ -1367,7 +1469,7 @@
+ 			printf("%s%s%s\n", COL_BLUE, program_banner, RESET);
+ 			printf("SSLScan is a fast SSL port scanner. SSLScan connects to SSL\n");
+ 			printf("ports and determines what  ciphers are supported, which are\n");
+-			printf("the servers  prefered  ciphers,  which  SSL  protocols  are\n");
++			printf("the servers  preferred  ciphers,  which  SSL  protocols  are\n");
+ 			printf("supported  and   returns  the   SSL   certificate.   Client\n");
+ 			printf("certificates /  private key can be configured and output is\n");
+ 			printf("to text / XML.\n\n");
+@@ -1381,7 +1483,9 @@
+ 			printf("                       is to listing all ciphers).\n");
+ 			printf("  %s--ssl2%s               Only check SSLv2 ciphers.\n", COL_GREEN, RESET);
+ 			printf("  %s--ssl3%s               Only check SSLv3 ciphers.\n", COL_GREEN, RESET);
+-			printf("  %s--tls1%s               Only check TLSv1 ciphers.\n", COL_GREEN, RESET);
++			printf("  %s--tls1%s               Only check TLSv1.0 ciphers.\n", COL_GREEN, RESET);
++            printf("  %s--tls1_1%s             Only check TLSv1.1 ciphers.\n", COL_GREEN, RESET);
++            printf("  %s--tls1_2%s             Only check TLSv1.2 ciphers.\n", COL_GREEN, RESET);
+ 			printf("  %s--pk=<file>%s          A file containing the private key or\n", COL_GREEN, RESET);
+ 			printf("                       a PKCS#12  file containing a private\n");
+ 			printf("                       key/certificate pair (as produced by\n");
+@@ -1395,6 +1499,7 @@
+ 			printf("  %s--http%s               Test a HTTP connection.\n", COL_GREEN, RESET);
+ 			printf("  %s--bugs%s               Enable SSL implementation  bug work-\n", COL_GREEN, RESET);
+ 			printf("                       arounds.\n");
++            printf("  %s--timesleep=<msec>%s   Wait msec after testing a cipher.\n", COL_GREEN, RESET);
+ 			printf("  %s--xml=<file>%s         Output results to an XML file.\n", COL_GREEN, RESET);
+ 			printf("  %s--version%s            Display the program version.\n", COL_GREEN, RESET);
+ 			printf("  %s--help%s               Display the  help text  you are  now\n", COL_GREEN, RESET);
+@@ -1407,6 +1512,7 @@
+ 		case mode_single:
+ 		case mode_multiple:
+ 			printf("%s%s%s", COL_BLUE, program_banner, RESET);
++            printf("%s time=%d\n", COL_BLUE, options.timesleep);
+ 
+ 			SSLeay_add_all_algorithms();
+ 			ERR_load_crypto_strings();
+@@ -1415,19 +1521,31 @@
+ 			switch (options.sslVersion)
+ 			{
+ 				case ssl_all:
++#ifndef OPENSSL_NO_SSL2
+ 					populateCipherList(&options, SSLv2_client_method());
++#endif
+ 					populateCipherList(&options, SSLv3_client_method());
+ 					populateCipherList(&options, TLSv1_client_method());
++                    populateCipherList(&options, TLSv1_1_client_method());
++                    populateCipherList(&options, TLSv1_2_client_method());
+ 					break;
++#ifndef OPENSSL_NO_SSL2
+ 				case ssl_v2:
+ 					populateCipherList(&options, SSLv2_client_method());
+ 					break;
++#endif
+ 				case ssl_v3:
+ 					populateCipherList(&options, SSLv3_client_method());
+ 					break;
+ 				case tls_v1:
+ 					populateCipherList(&options, TLSv1_client_method());
+ 					break;
++                case tls_v1_1:
++                    populateCipherList(&options, TLSv1_1_client_method());
++                    break;
++                case tls_v1_2:
++                    populateCipherList(&options, TLSv1_2_client_method());
++                    break;
+ 			}
+ 
+ 			// Do the testing...

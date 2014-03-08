@@ -1,0 +1,67 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+include /usr/share/quilt/quilt.make
+
+configure: configure-stamp
+configure-stamp: patch
+	dh_testdir
+	touch configure-stamp
+
+build: build-stamp
+build-arch: build
+build-indep: build
+
+build-stamp: configure-stamp
+	dh_testdir
+
+	# Compile sslscan
+	$(MAKE) all
+
+	touch $@
+
+clean: unpatch
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+
+	# clean up
+	$(MAKE) clean
+
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_prep
+	dh_installdirs
+
+	# install sslscan
+	install -d $(CURDIR)/debian/sslscan/usr/bin/
+	install -d $(CURDIR)/debian/sslscan/usr/share/man/man1/
+	$(MAKE) BINPATH="$(CURDIR)/debian/sslscan/usr/bin/" MANPATH="$(CURDIR)/debian/sslscan/usr/share/man/" install
+
+# Build architecture-independent files here.
+binary-indep: build install
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs Changelog
+	dh_installdocs
+#	dh_installman
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure

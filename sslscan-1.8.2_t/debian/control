@@ -1,0 +1,16 @@
+Source: sslscan
+Section: utils
+Priority: extra
+Maintainer: Marvin Stark <marv@der-marv.de>
+Build-Depends: debhelper (>= 5), quilt ( >=0.46-4 ), libssl-dev
+Standards-Version: 3.9.2
+
+Package: sslscan
+Architecture: any
+Homepage: http://sourceforge.net/projects/sslscan
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Fast SSL scanner
+ SSLScan queries SSL services, such as HTTPS, in order to determine the ciphers
+ that are supported. SSLScan is designed to be easy, lean and fast. The output
+ includes preferred ciphers of the SSL service, the certificate and is in text
+ and XML formats.
